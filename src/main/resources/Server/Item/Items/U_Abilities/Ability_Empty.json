@@ -1,0 +1,7 @@
+{
+  "ID": "uggles_combat:empty",
+  "Name": "Empty",
+  "Icon": "Icons/ItemsGenerated/Ability_Empty.png",
+  "ItemAsset": "Items/U_Abilities/Ability_Empty",
+  "Model": "Blocks/_Debug/Model.blockymodel"
+}

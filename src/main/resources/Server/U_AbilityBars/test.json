@@ -1,0 +1,7 @@
+{
+  "ID": "uggles_combat:bar/test",
+  "Abilities": [
+    "Items/U_Abilities/Ability_DaggerLeap"
+  ],
+  "confirmUsesSelectedAbility": true
+}

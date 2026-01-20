@@ -1,0 +1,194 @@
+@KeyStyle = (
+  FontSize: 12,
+  RenderBold: true,
+  TextColor: #ffffff(0.9),
+  OutlineColor: #000000(0.4)
+);
+
+@SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
+@BarBackground  = PatchStyle(TexturePath: "ContainerDecoration.png", Border: 8);
+
+@EmptyIcon = PatchStyle(TexturePath: "U_Abilities/Ability_Empty.png");
+
+Group #Root {
+  Anchor: (Bottom: 120, Width: 520, Height: 72);
+  LayoutMode: Center;
+
+  Group #Bar {
+    Anchor: (Width: 520, Height: 72);
+    Background: @BarBackground;
+
+    Group #SlotZero {
+      Anchor: (Left: 12, Top: 8, Width: 30, Height: 30);
+      Background: @SlotBackground;
+
+      Group #IconZero {
+        Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+        Background: @EmptyIcon;
+      }
+
+      Label #KeyZero {
+        Text: "0";
+        Anchor: (Left: 4, Top: 2);
+        Style: @KeyStyle;
+      }
+    }
+
+    Group #Slots {
+      LayoutMode: Left;
+      Anchor: (Left: 48, Top: 20, Width: 424, Height: 40);
+
+      Group #Slot1 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon1 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key1 {
+          Text: "1";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap1 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot2 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon2 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key2 {
+          Text: "2";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap2 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot3 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon3 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key3 {
+          Text: "3";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap3 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot4 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon4 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key4 {
+          Text: "4";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap4 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot5 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon5 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key5 {
+          Text: "5";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap5 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot6 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon6 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key6 {
+          Text: "6";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap6 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot7 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon7 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key7 {
+          Text: "7";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap7 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot8 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon8 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key8 {
+          Text: "8";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap8 { Anchor: (Width: 8, Height: 1); }
+
+      Group #Slot9 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Icon9 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Label #Key9 {
+          Text: "9";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+    }
+  }
+}
