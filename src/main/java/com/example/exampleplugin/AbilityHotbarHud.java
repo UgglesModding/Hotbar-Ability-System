@@ -8,6 +8,8 @@ import javax.annotation.Nonnull;
 
 public class AbilityHotbarHud extends CustomUIHud {
 
+    private static final boolean DEBUG_ICONS = true;
+
     private final AbilityRegistry registry;
     private final AbilityHotbarState state;
 
@@ -40,11 +42,22 @@ public class AbilityHotbarHud extends CustomUIHud {
     }
 
 
-    private void applyIcon(UICommandBuilder ui, String nodeId, String itemId) {
-        String iconPath = iconPathFromItemId(itemId);
+    private void applyIcon(UICommandBuilder ui, String nodeId, String inputId) {
+
+        debugSay("Slot " + nodeId + " input = " + inputId);
+
+        String itemId = AbilityItemResolver.resolveItemId(registry, inputId);
+        debugSay("Resolved itemId = " + itemId);
+
+        String iconPath = AbilityItemResolver.itemIdToIconPath(itemId);
+        debugSay("Icon path = " + iconPath);
+
         ui.set("#" + nodeId + ".Visible", true);
-        ui.set("#" + nodeId + ".Background", "PatchStyle(TexturePath: \"" + iconPath + "\")");
+        ui.set("#" + nodeId + ".Background",
+                "PatchStyle(TexturePath: \"" + iconPath + "\")"
+        );
     }
+
 
 
 
@@ -54,6 +67,16 @@ public class AbilityHotbarHud extends CustomUIHud {
         }
         return "U_Abilities/" + itemId + ".png";
     }
+    
+    private void debugSay(String message) {
+        if (!DEBUG_ICONS) return;
+
+        getPlayerRef().sendMessage(
+                com.hypixel.hytale.server.core.Message.raw("[AbilityHUD] " + message)
+        );
+    }
+
+
 
 
 
