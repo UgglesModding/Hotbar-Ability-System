@@ -1,0 +1,7 @@
+{
+  "ItemId": "CAO_Weapon",
+  "AbilitySlots": [
+    { "Key": "Ability_DaggerLeap" },
+    { "Key": "Ability_Empty" }
+  ]
+}

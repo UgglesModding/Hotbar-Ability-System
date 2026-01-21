@@ -1,0 +1,6 @@
+{
+  "abilities": [
+    "Server/CombatAbilityOverhaul/Abilities/Ability_Empty.json",
+    "Server/CombatAbilityOverhaul/Abilities/Ability_DaggerLeap.json"
+  ]
+}

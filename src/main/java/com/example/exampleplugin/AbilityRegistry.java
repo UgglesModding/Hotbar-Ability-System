@@ -32,7 +32,7 @@ public class AbilityRegistry {
 
         // ✅ NEW PATH (matches your Look.zip)
         AbilityIndex abilityIndex = readJson(
-                "Server/Item/Items/U_Abilities/index.json",
+                "Server/UgglesCombat/U_Abilities/index.json",
                 AbilityIndex.class
         );
 
