@@ -41,6 +41,6 @@ public final class AbilityItemResolver {
         }
 
         // UI TexturePath is RELATIVE to the .ui file: Common/UI/Custom/
-        return "../../Icons/ItemsGenerated/" + itemId + ".png";
+        return "Icons/ItemsGenerated/" + itemId + ".png";
     }
 }
