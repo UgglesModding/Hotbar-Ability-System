@@ -5,6 +5,6 @@
   "ItemAsset": "Items/U_Abilities/Ability_DaggerLeap",
   "Model": "Blocks/_Debug/Model.blockymodel",
   "Interactions": {
-    "Use": "Ability_Test"
+    "Type": "uggles_combat:ability_test"
   }
 }

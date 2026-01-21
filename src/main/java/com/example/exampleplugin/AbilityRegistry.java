@@ -96,22 +96,20 @@ public class AbilityRegistry {
 
         abilitiesById.put(data.ID, data);
 
-        // Map ItemAsset path -> AbilityData
         if (data.ItemAsset != null && !data.ItemAsset.isBlank()) {
             abilitiesByItemAsset.put(data.ItemAsset, data);
-
-            // Derive ingame item id from ItemAsset path
             String itemId = normalizeItemIdFromItemAsset(data.ItemAsset);
             if (itemId != null && !itemId.isBlank()) {
                 abilitiesByItemId.put(itemId, data);
             }
         }
 
-        System.out.println("[AbilityRegistry] Loaded ability: ID=" + data.ID +
-                " ItemAsset=" + data.ItemAsset +
-                " Icon=" + data.Icon +
-                " from " + resourcePath);
+        String use = (data.Interactions == null) ? null : data.Interactions.Use;
+        System.out.println("[AbilityRegistry] " + data.ID +
+                " Interactions=" + (data.Interactions == null ? "null" : "ok") +
+                " Use=" + (data.Interactions == null ? "null" : data.Interactions.Use));
     }
+
 
     private void loadBar(String resourcePath) {
         AbilityBarData data = readJson(resourcePath, AbilityBarData.class);
