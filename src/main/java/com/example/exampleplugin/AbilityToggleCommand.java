@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public class AbilityToggleCommand extends AbstractPlayerCommand {
 
@@ -47,8 +48,8 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
             var hudManager = player.getHudManager();
 
             if (s.enabled) {
-                // TEMP: ensure the test bar is loaded when turning on
-                abilitySystem.loadNewAbilityBar(playerRef, null);
+                // Fill empties so the HUD has something deterministic to show
+                abilitySystem.setSlots(playerRef, List.of());
 
                 hudManager.setCustomHud(
                         playerRef,

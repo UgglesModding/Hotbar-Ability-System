@@ -1,0 +1,25 @@
+{
+  "TranslationProperties": {
+    "Name": "Template Ability Weapon"
+  },
+  "AbilitySlots": [
+    {
+      "Root": "Ability_DaggerLeap",
+      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0
+    },
+    {
+      "Root": "Ability_Empty",
+      "Icon": "Icons/ItemsGenerated/Ability_Parry.png",
+      "MaxUses": 1,
+      "PowerMultiplier": 0.7
+    }
+  ],
+  "Interactions": {
+    "Ability1": "OpenAbilityBar"
+  },
+  "Categories": [
+    "Items.Weapons"
+  ]
+}

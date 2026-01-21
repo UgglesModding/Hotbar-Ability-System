@@ -32,7 +32,6 @@ public class ExamplePlugin extends JavaPlugin {
 
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
         this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));
-        this.getCommandRegistry().registerCommand(new LoadBarCommand(state, abilitySystem));
         this.getCommandRegistry().registerCommand(new GiveAbilityCommand(registry));
 
 
