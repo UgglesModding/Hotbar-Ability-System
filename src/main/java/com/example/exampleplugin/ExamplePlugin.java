@@ -27,7 +27,8 @@ public class ExamplePlugin extends JavaPlugin {
         AbilityRegistry registry = new AbilityRegistry();
         registry.loadAllFromResources();
 
-        AbilitySystem abilitySystem = new AbilitySystem(registry, state);
+        AbilityInteractionExecutor executor = new AbilityInteractionExecutor();
+        AbilitySystem abilitySystem = new AbilitySystem(registry, state, executor);
 
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
         this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));
@@ -35,7 +36,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new GiveAbilityCommand(registry));
 
 
-        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state));
+        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
+
     }
 
 

@@ -3,5 +3,8 @@
   "Name": "Dagger Leap",
   "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
   "ItemAsset": "Items/U_Abilities/Ability_DaggerLeap",
-  "Model": "Blocks/_Debug/Model.blockymodel"
+  "Model": "Blocks/_Debug/Model.blockymodel",
+  "Interactions": {
+    "Use": "Ability_Test"
+  }
 }

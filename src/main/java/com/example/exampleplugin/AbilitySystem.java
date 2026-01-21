@@ -1,5 +1,6 @@
 package com.example.exampleplugin;
 
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.util.List;
@@ -8,10 +9,17 @@ public class AbilitySystem {
 
     private final AbilityRegistry registry;
     private final AbilityHotbarState state;
+    private final AbilityInteractionExecutor executor; // ✅ MISSING FIELD (now added)
 
-    public AbilitySystem(AbilityRegistry registry, AbilityHotbarState state) {
+    // ✅ FIXED CONSTRUCTOR
+    public AbilitySystem(
+            AbilityRegistry registry,
+            AbilityHotbarState state,
+            AbilityInteractionExecutor executor
+    ) {
         this.registry = registry;
         this.state = state;
+        this.executor = executor;
     }
 
     public AbilityRegistry getRegistry() {
@@ -21,13 +29,11 @@ public class AbilitySystem {
     public void openAbilityBar(PlayerRef playerRef, String abilityBarId) {
         var s = state.get(playerRef.getUsername());
 
-        // If nothing passed, DO NOT enable and DO NOT touch hotbar data
         if (abilityBarId == null || abilityBarId.isBlank()) {
             s.enabled = false;
             return;
         }
 
-        // Load if changed or not set yet
         if (s.currentAbilityBarId == null || !abilityBarId.equals(s.currentAbilityBarId)) {
             loadNewAbilityBar(playerRef, abilityBarId);
         }
@@ -44,7 +50,6 @@ public class AbilitySystem {
 
         AbilityBarData bar = registry.getBar(abilityBarId);
         if (bar == null || bar.Abilities == null) {
-            // Bar missing -> fill empty safely
             s.currentAbilityBarId = abilityBarId;
             s.selectedAbilitySlot = 1;
             s.fillAllEmpty();
@@ -54,13 +59,10 @@ public class AbilitySystem {
         s.currentAbilityBarId = abilityBarId;
         s.selectedAbilitySlot = 1;
 
-        // IMPORTANT:
-        // bar.Abilities MUST now be a list of ITEM ASSET KEYS (strings),
-        // e.g. "Items/U_Abilities/Ability_DaggerLeap"
         List<String> src = bar.Abilities;
 
         for (int i = 0; i < 9; i++) {
-            String itemId = (i < src.size()) ? src.get(i) : null;
+            String itemId = (i < src.size()) ? normalizeItemId(src.get(i)) : null;
 
             if (itemId == null || itemId.isBlank()) {
                 itemId = AbilityRegistry.EMPTY_ITEM_ID;
@@ -68,32 +70,57 @@ public class AbilitySystem {
 
             s.hotbarItemIds[i] = itemId;
         }
-
     }
 
+    /**
+     * slot0to9:
+     * 1–9 = activate that slot
+     * 0   = confirm → activate selectedAbilitySlot
+     */
     public void useSlot(PlayerRef playerRef, int slot0to9) {
         var s = state.get(playerRef.getUsername());
 
         int resolved = (slot0to9 == 0) ? s.selectedAbilitySlot : slot0to9;
         if (resolved < 1 || resolved > 9) return;
 
-        // selecting a slot also updates selected
         if (slot0to9 != 0) {
             s.selectedAbilitySlot = resolved;
         }
 
-        String itemAsset = s.hotbarItemIds[resolved - 1];
-        if (itemAsset == null || itemAsset.isBlank()) {
-            itemAsset = AbilityRegistry.EMPTY_ITEM_ID;
+        String itemId = s.hotbarItemIds[resolved - 1];
+        if (itemId == null || itemId.isBlank()) {
+            itemId = AbilityRegistry.EMPTY_ITEM_ID;
         }
 
-        // This is where your RootInteraction execution will go later.
-        // For now, log what item would execute.
-        System.out.println("USE ABILITY ITEM: " + itemAsset + " for " + playerRef.getUsername());
+        AbilityData data = registry.getAbilityByItemId(itemId);
 
-        // TODO:
-        // - resolve the item by ItemAsset
-        // - execute its RootInteraction
+        String useInteraction = null;
+        if (data != null && data.Interactions != null) {
+            useInteraction = data.Interactions.Use;
+        }
+
+        System.out.println("[AbilitySystem] slot=" + resolved +
+                " itemId=" + itemId +
+                " ability=" + (data == null ? "null" : data.ID) +
+                " Use=" + useInteraction);
+
+        playerRef.sendMessage(Message.raw(
+                "[Ability] slot=" + resolved +
+                        " itemId=" + itemId +
+                        " Use=" + useInteraction
+        ));
+
+        if (useInteraction == null || useInteraction.isBlank()) {
+            return;
+        }
+
+        // ✅ EXECUTE INTERACTION
+        boolean ok = executor.execute(useInteraction, playerRef);
+        if (!ok) {
+            playerRef.sendMessage(Message.raw(
+                    "[Ability] No handler registered for interaction: " + useInteraction
+            ));
+        }
     }
 
     public void closeAbilityBar(PlayerRef playerRef) {
@@ -104,4 +131,23 @@ public class AbilitySystem {
         s.fillAllEmpty();
     }
 
+    private static String normalizeItemId(String s) {
+        if (s == null) return null;
+
+        s = s.trim();
+        if (s.isEmpty()) return null;
+
+        s = s.replace('\\', '/');
+
+        int slash = s.lastIndexOf('/');
+        if (slash >= 0) {
+            s = s.substring(slash + 1);
+        }
+
+        if (s.endsWith(".json")) {
+            s = s.substring(0, s.length() - 5);
+        }
+
+        return s;
+    }
 }

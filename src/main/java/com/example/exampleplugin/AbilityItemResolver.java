@@ -40,7 +40,7 @@ public final class AbilityItemResolver {
             itemId = AbilityRegistry.EMPTY_ITEM_ID;
         }
 
-        // If your icons are exactly: Common/Icons/ItemsGenerated/<ItemId>.png
-        return "Icons/ItemsGenerated/" + itemId + ".png";
+        // UI TexturePath is RELATIVE to the .ui file: Common/UI/Custom/
+        return "../../Icons/ItemsGenerated/" + itemId + ".png";
     }
 }

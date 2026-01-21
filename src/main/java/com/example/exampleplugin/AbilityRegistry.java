@@ -13,18 +13,25 @@ public class AbilityRegistry {
 
     private final Gson gson = new GsonBuilder().create();
 
+    // Ability ID: "uggles_combat:daggerleap"
     private final Map<String, AbilityData> abilitiesById = new HashMap<>();
+
+    // Item ID (ingame filename): "Ability_DaggerLeap"
+    private final Map<String, AbilityData> abilitiesByItemId = new HashMap<>();
+
+    // ItemAsset path: "Items/U_Abilities/Ability_DaggerLeap"
     private final Map<String, AbilityData> abilitiesByItemAsset = new HashMap<>();
+
     private final Map<String, AbilityBarData> barsById = new HashMap<>();
+
     public static final String EMPTY_ITEM_ID = "Ability_Empty";
-
-
     public static final String EMPTY_ABILITY_ID = "uggles_combat:empty";
 
     public void loadAllFromResources() {
         abilitiesById.clear();
-        barsById.clear();
+        abilitiesByItemId.clear();
         abilitiesByItemAsset.clear();
+        barsById.clear();
 
         // 1) Load ability index
         AbilityIndex abilityIndex = readJson("Server/U_Abilities/index.json", AbilityIndex.class);
@@ -52,19 +59,27 @@ public class AbilityRegistry {
         if (!abilitiesById.containsKey(EMPTY_ABILITY_ID)) {
             System.out.println("[AbilityRegistry] WARNING: missing required ability id " + EMPTY_ABILITY_ID);
         }
+        if (!abilitiesByItemId.containsKey(EMPTY_ITEM_ID)) {
+            System.out.println("[AbilityRegistry] WARNING: missing required empty item id " + EMPTY_ITEM_ID);
+        }
     }
 
-    public AbilityData getAbility(String id) {
-        return abilitiesById.get(id);
+    public AbilityData getAbility(String abilityId) {
+        return abilitiesById.get(abilityId);
+    }
+
+    public AbilityData getAbilityByItemId(String itemId) {
+        if (itemId == null) return null;
+        return abilitiesByItemId.get(itemId);
     }
 
     public AbilityData getAbilityByItemAsset(String itemAsset) {
+        if (itemAsset == null) return null;
         return abilitiesByItemAsset.get(itemAsset);
     }
 
-
-    public AbilityBarData getBar(String id) {
-        return barsById.get(id);
+    public AbilityBarData getBar(String barId) {
+        return barsById.get(barId);
     }
 
     private void loadAbility(String resourcePath) {
@@ -73,17 +88,29 @@ public class AbilityRegistry {
             System.out.println("[AbilityRegistry] Ability NOT FOUND or FAILED: " + resourcePath);
             return;
         }
+
         if (data.ID == null || data.ID.isBlank()) {
-            System.out.println("[AbilityRegistry] Ability missing id: " + resourcePath);
+            System.out.println("[AbilityRegistry] Ability missing ID: " + resourcePath);
             return;
         }
+
         abilitiesById.put(data.ID, data);
+
+        // Map ItemAsset path -> AbilityData
         if (data.ItemAsset != null && !data.ItemAsset.isBlank()) {
             abilitiesByItemAsset.put(data.ItemAsset, data);
+
+            // Derive ingame item id from ItemAsset path
+            String itemId = normalizeItemIdFromItemAsset(data.ItemAsset);
+            if (itemId != null && !itemId.isBlank()) {
+                abilitiesByItemId.put(itemId, data);
+            }
         }
 
-        System.out.println("Loaded Ability JSON => ID=" + data.ID + " Icon=" + data.Icon + " ItemAsset=" + data.ItemAsset);
-        System.out.println("[AbilityRegistry] Loaded ability: " + data.ID + " from " + resourcePath);
+        System.out.println("[AbilityRegistry] Loaded ability: ID=" + data.ID +
+                " ItemAsset=" + data.ItemAsset +
+                " Icon=" + data.Icon +
+                " from " + resourcePath);
     }
 
     private void loadBar(String resourcePath) {
@@ -93,7 +120,7 @@ public class AbilityRegistry {
             return;
         }
         if (data.ID == null || data.ID.isBlank()) {
-            System.out.println("[AbilityRegistry] Bar missing id: " + resourcePath);
+            System.out.println("[AbilityRegistry] Bar missing ID: " + resourcePath);
             return;
         }
         barsById.put(data.ID, data);
@@ -101,10 +128,28 @@ public class AbilityRegistry {
                 (data.Abilities == null ? 0 : data.Abilities.size()) + ") from " + resourcePath);
     }
 
+    private static String normalizeItemIdFromItemAsset(String s) {
+        if (s == null) return null;
+        s = s.trim();
+        if (s.isEmpty()) return null;
+
+        s = s.replace('\\', '/');
+
+        // Take last segment after '/'
+        int slash = s.lastIndexOf('/');
+        if (slash >= 0) {
+            s = s.substring(slash + 1);
+        }
+
+        // Strip ".json" if present
+        if (s.endsWith(".json")) {
+            s = s.substring(0, s.length() - 5);
+        }
+
+        return s;
+    }
+
     private String normalizePath(String path) {
-        // Allow index to list either:
-        // - "Server/U_Abilities/daggerleap.json"
-        // - "/Server/U_Abilities/daggerleap.json"
         String p = path.trim();
         while (p.startsWith("/")) p = p.substring(1);
         return p;
@@ -122,5 +167,4 @@ public class AbilityRegistry {
             return null;
         }
     }
-
 }
