@@ -1,119 +1,118 @@
 package com.example.exampleplugin;
 
-import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.List;
 
 public class AbilitySystem {
 
-    private final AbilityRegistry registry;
+    private final AbilityRegistry abilityRegistry;
+    private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
-    private final AbilityInteractionExecutor executor;
 
-    public AbilitySystem(AbilityRegistry registry, AbilityHotbarState state, AbilityInteractionExecutor executor) {
-        this.registry = registry;
+    public AbilitySystem(AbilityRegistry abilityRegistry, WeaponRegistry weaponRegistry, AbilityHotbarState state) {
+        this.abilityRegistry = abilityRegistry;
+        this.weaponRegistry = weaponRegistry;
         this.state = state;
-        this.executor = executor;
     }
 
     public AbilityRegistry getRegistry() {
-        return registry;
+        return abilityRegistry;
     }
 
-    public void enable(PlayerRef playerRef) {
-        var s = state.get(playerRef.getUsername());
-        s.enabled = true;
-    }
-
-    public void disable(PlayerRef playerRef) {
-        var s = state.get(playerRef.getUsername());
-        s.enabled = false;
-    }
-
-    /**
-     * For now: let commands (and later weapon parsing) set the 1..9 ability items.
-     * Accepts either:
-     *  - "Ability_DaggerLeap"
-     *  - "Items/U_Abilities/Ability_DaggerLeap"
-     */
-    public void setSlots(PlayerRef playerRef, List<String> itemIdsOrAssets) {
+    /** Overwrite hotbar slots directly (1..9), padding with EMPTY. */
+    public void setSlots(PlayerRef playerRef, List<String> itemIdsOrPaths) {
         var s = state.get(playerRef.getUsername());
 
         for (int i = 0; i < 9; i++) {
-            String v = (itemIdsOrAssets != null && i < itemIdsOrAssets.size()) ? itemIdsOrAssets.get(i) : null;
-            String itemId = normalizeItemId(v);
+            String v = (itemIdsOrPaths != null && i < itemIdsOrPaths.size()) ? itemIdsOrPaths.get(i) : null;
+            v = ItemIdUtil.normalizeItemId(v);
 
-            if (itemId == null || itemId.isBlank()) {
-                itemId = AbilityRegistry.EMPTY_ITEM_ID;
-            }
+            if (v == null || v.isBlank()) v = AbilityRegistry.EMPTY_ITEM_ID;
 
-            s.hotbarItemIds[i] = itemId;
+            s.hotbarItemIds[i] = v;
         }
+
+        s.selectedAbilitySlot = 1;
+
+        System.out.println("[AbilitySystem] setSlots user=" + playerRef.getUsername()
+                + " slot1=" + s.hotbarItemIds[0]
+                + " slot2=" + s.hotbarItemIds[1]);
     }
 
-    /**
-     * slot0to9:
-     *  - 1..9 => use that slot
-     *  - 0    => confirm (uses selectedAbilitySlot)
-     */
-    public void useSlot(PlayerRef playerRef, int slot0to9) {
+    /** Call this when enabling the HUD (Q) to pull AbilitySlots from currently held weapon. */
+    public void refreshFromHeldWeapon(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
         var s = state.get(playerRef.getUsername());
 
-        int resolved = (slot0to9 == 0) ? s.selectedAbilitySlot : slot0to9;
-        if (resolved < 1 || resolved > 9) return;
-
-        if (slot0to9 != 0) {
-            s.selectedAbilitySlot = resolved;
-        }
-
-        String itemId = s.hotbarItemIds[resolved - 1];
-        if (itemId == null || itemId.isBlank()) itemId = AbilityRegistry.EMPTY_ITEM_ID;
-
-        // Resolve ability data from itemId
-        AbilityData data = registry.getAbilityByItemId(itemId);
-
-        if (data == null) {
-            playerRef.sendMessage(Message.raw("[Ability] No AbilityData for itemId=" + itemId));
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        if (player == null) {
+            s.fillAllEmpty();
             return;
         }
 
-        String useInteraction = (data.Interactions != null) ? data.Interactions.Use : null;
-
-        playerRef.sendMessage(Message.raw(
-                "[Ability] slot=" + resolved + " itemId=" + itemId + " Use=" + useInteraction
-        ));
-
-        boolean ok = executor.execute(useInteraction, playerRef);
-        if (!ok) {
-            playerRef.sendMessage(Message.raw("[Ability] Handler missing for: " + useInteraction));
+        String heldItemId = getHeldItemId(player);
+        if (heldItemId == null || heldItemId.isBlank()) {
+            s.fillAllEmpty();
+            return;
         }
+
+        List<String> keys = weaponRegistry.resolveAbilityKeys(heldItemId);
+
+        for (int i = 0; i < 9; i++) {
+            String key = (keys != null && i < keys.size()) ? keys.get(i) : null;
+            key = ItemIdUtil.normalizeItemId(key);
+
+            if (key == null || key.isBlank()) key = AbilityRegistry.EMPTY_ITEM_ID;
+
+            s.hotbarItemIds[i] = key;
+        }
+
+        s.selectedAbilitySlot = 1;
+
+        System.out.println("[AbilitySystem] refreshFromHeldWeapon held=" + heldItemId
+                + " slot1=" + s.hotbarItemIds[0]
+                + " slot2=" + s.hotbarItemIds[1]
+                + " slot3=" + s.hotbarItemIds[2]);
     }
 
-    /**
-     * Normalizes:
-     * - "Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Items/U_Abilities/Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Items\\U_Abilities\\Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Ability_DaggerLeap.json" -> "Ability_DaggerLeap"
-     */
-    public static String normalizeItemId(String s) {
-        if (s == null) return null;
+    public void useSlot(PlayerRef playerRef, int slot1to9) {
+        var s = state.get(playerRef.getUsername());
 
-        s = s.trim();
-        if (s.isEmpty()) return null;
+        if (slot1to9 < 1 || slot1to9 > 9) return;
 
-        s = s.replace('\\', '/');
+        s.selectedAbilitySlot = slot1to9;
 
-        int slash = s.lastIndexOf('/');
-        if (slash >= 0) {
-            s = s.substring(slash + 1);
+        String itemId = s.hotbarItemIds[slot1to9 - 1];
+        if (itemId == null || itemId.isBlank()) itemId = AbilityRegistry.EMPTY_ITEM_ID;
+
+        // Resolve ability json from item id (Ability_DaggerLeap -> AbilityData)
+        AbilityData ability = abilityRegistry.getAbilityByItemId(itemId);
+
+        String useInteraction = null;
+        if (ability != null && ability.Interactions != null) {
+            useInteraction = ability.Interactions.Use; // (assuming your AbilityData has Interactions.Use)
         }
 
-        if (s.endsWith(".json")) {
-            s = s.substring(0, s.length() - 5);
-        }
+        System.out.println("[AbilitySystem] USE slot=" + slot1to9
+                + " itemId=" + itemId
+                + " abilityJson=" + (ability == null ? "null" : ability.ID)
+                + " Use=" + useInteraction);
+    }
 
-        return s;
+    private static String getHeldItemId(Player player) {
+        ItemContainer hotbar = player.getInventory().getHotbar();
+        byte active = player.getInventory().getActiveHotbarSlot(); // 0..8
+
+        // ✅ Correct getter name
+        ItemStack stack = hotbar.getItemStack((short) active); // :contentReference[oaicite:1]{index=1}
+        if (stack == null) return null;
+
+        return stack.getItemId();
     }
 }

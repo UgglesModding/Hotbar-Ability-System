@@ -1,6 +1,7 @@
 {
+  "ItemId": "CAO_Template_Weapon_Daggers",
   "TranslationProperties": {
-    "Name": "Tests"
+    "Name": "CAO_Template_Daggers"
   },
   "Model": "Items/Weapons/Dagger/Iron.blockymodel",
   "Texture": "Items/Weapons/Dagger/Iron_Texture.png",
@@ -32,7 +33,7 @@
   "Interactions": {
     "Primary": "Root_Weapon_Daggers_Primary",
     "Secondary": "Root_Weapon_Daggers_Secondary_Guard",
-    "Ability1": "Root_Weapon_Daggers_Signature_Razorstrike"
+    "Ability1": "OpenAbilityBar"
   },
   "Tags": {
     "Type": [

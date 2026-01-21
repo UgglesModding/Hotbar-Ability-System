@@ -30,14 +30,13 @@ public class AbilityRegistry {
         abilitiesByItemId.clear();
         abilitiesByItemAsset.clear();
 
-        // ✅ NEW PATH (matches your Look.zip)
         AbilityIndex abilityIndex = readJson(
                 "Server/UgglesCombat/U_Abilities/index.json",
                 AbilityIndex.class
         );
 
         if (abilityIndex == null || abilityIndex.abilities == null) {
-            System.out.println("[AbilityRegistry] Missing or invalid: Server/Item/Items/U_Abilities/index.json");
+            System.out.println("[AbilityRegistry] Missing or invalid: Server/UgglesCombat/U_Abilities/index.json");
             return;
         }
 
@@ -79,18 +78,18 @@ public class AbilityRegistry {
 
         abilitiesById.put(data.ID, data);
 
-        // ✅ Derive in-game item id from ItemAsset if present
-        // ItemAsset example: "Items/U_Abilities/Ability_DaggerLeap" => itemId "Ability_DaggerLeap"
         if (data.ItemAsset != null && !data.ItemAsset.isBlank()) {
             abilitiesByItemAsset.put(data.ItemAsset, data);
 
-            String itemId = AbilitySystem.normalizeItemId(data.ItemAsset);
+            String itemId = ItemIdUtil.normalizeItemId(data.ItemAsset);
             if (itemId != null && !itemId.isBlank()) {
                 abilitiesByItemId.put(itemId, data);
             }
         }
 
-        System.out.println("[AbilityRegistry] Loaded ability: " + data.ID + " (ItemAsset=" + data.ItemAsset + ")");
+        System.out.println("[AbilityRegistry] Loaded ability: " + data.ID
+                + " itemId=" + (data.ItemAsset == null ? "null" : ItemIdUtil.normalizeItemId(data.ItemAsset))
+                + " icon=" + data.Icon);
     }
 
     private String normalizePath(String path) {

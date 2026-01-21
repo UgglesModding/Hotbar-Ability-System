@@ -1,5 +1,5 @@
 {
   "Includes": [
-    "Server/UgglesCombat/Weapons/Daggers/CAO_Template_Weapon_Daggers.json"
+    "Server/Item/Items/Weapons/CAO_Weapons/Daggers/CAO_Template_Weapon_Daggers.json"
   ]
 }

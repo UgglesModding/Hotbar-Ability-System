@@ -28,7 +28,18 @@ public class ExamplePlugin extends JavaPlugin {
         registry.loadAllFromResources();
 
         AbilityInteractionExecutor executor = new AbilityInteractionExecutor();
-        AbilitySystem abilitySystem = new AbilitySystem(registry, state, executor);
+
+        AbilityRegistry abilityRegistry = new AbilityRegistry();
+        abilityRegistry.loadAllFromResources();
+
+        WeaponRegistry weaponRegistry = new WeaponRegistry();
+        weaponRegistry.loadAllFromResources();
+
+        AbilitySystem abilitySystem = new AbilitySystem(abilityRegistry, weaponRegistry, state);
+
+// commands...
+// packet filter:
+        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
 
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
         this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));

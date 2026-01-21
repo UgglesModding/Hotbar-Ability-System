@@ -1,7 +1,22 @@
 {
   "ItemId": "CAO_Weapon",
   "AbilitySlots": [
-    { "Key": "Ability_DaggerLeap" },
-    { "Key": "Ability_Empty" }
+    {
+      "Key": "Ability_DaggerLeap"
+    },
+    {
+      "Key": "Ability_DaggerLeap"
+    }
+  ],
+  "Interactions": {
+    "Ability1": "OpenAbilityBar"
+  },
+  "Icon": "Icons/ItemsGenerated/Example_Block.png",
+  "Model": "Blocks/_Debug/Model.blockymodel",
+  "TranslationProperties": {
+    "Name": "Tests1"
+  },
+  "Categories": [
+    "Items.Weapons"
   ]
 }

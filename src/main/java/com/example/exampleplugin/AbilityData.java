@@ -7,16 +7,22 @@ public class AbilityData {
     public String ItemAsset;
     public String Model;
 
-    // Must be named EXACTLY "Interactions" to match JSON key "Interactions"
-    public Interactions Interactions;
+    public AbilityInteractions Interactions;
 
-    public static class Interactions {
-        // Must be named EXACTLY "Use" to match JSON key "Use"
+    public static class AbilityInteractions {
         public String Use;
-
-        // Optional extras for later, harmless to keep
         public String SwapTo;
         public String Primary;
         public String Secondary;
+        public String SelectAbility;
+        public String Ability1;
+        public String Ability2;
+        public String Ability3;
+        public String Ability4;
+        public String Ability5;
+        public String Ability6;
+        public String Ability7;
+        public String Ability8;
+        public String Ability9;
     }
 }

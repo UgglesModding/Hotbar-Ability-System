@@ -3,5 +3,6 @@
   "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
   "MaxUses": 3,
   "PowerMultiplier": 1.0,
-  "Handler": "DaggerLeap"
+
+  "RootInteraction": "Ability_Test"
 }
