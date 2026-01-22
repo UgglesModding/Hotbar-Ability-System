@@ -99,7 +99,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                             new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original)
                     );
 
-                    abilitySystem.useSlot(playerRef, slot);
+                    abilitySystem.useSlot(playerRef, store, ref, world, slot);
                 });
 
                 return true;

@@ -29,6 +29,7 @@ public class ExamplePlugin extends JavaPlugin {
         AbilityRegistry abilityRegistry = new AbilityRegistry();
         abilityRegistry.loadAllFromResources();
 
+
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
 
@@ -46,6 +47,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(
                 new GiveAbilityCommand(abilityRegistry)
         );
+        this.getCommandRegistry().registerCommand(new AbilityIntrospectCommand());
+
 
         // Packet filter
         inboundFilter = PacketAdapters.registerInbound(
