@@ -32,7 +32,8 @@ public class AbilityDebugCommand extends AbstractPlayerCommand {
             var s = state.get(playerRef.getUsername());
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Bar=").append(s.currentAbilityBarId).append(" | ");
+            sb.append("Enabled=").append(s.enabled).append(" | ");
+
             sb.append("Selected=").append(s.selectedAbilitySlot).append("\n");
 
             for (int i = 0; i < 9; i++) {

@@ -1,107 +1,115 @@
+// AbilitySystem.java
 package com.example.exampleplugin;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.List;
 
 public class AbilitySystem {
 
-    private final AbilityRegistry registry;
+    private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
+    private final AbilityInteractionExecutor interactionExecutor;
 
-    public AbilitySystem(AbilityRegistry registry, AbilityHotbarState state) {
-        this.registry = registry;
+    public AbilitySystem(
+            WeaponRegistry weaponRegistry,
+            AbilityHotbarState state,
+            AbilityInteractionExecutor interactionExecutor
+    ) {
+        this.weaponRegistry = weaponRegistry;
         this.state = state;
+        this.interactionExecutor = interactionExecutor;
     }
 
-    public AbilityRegistry getRegistry() {
-        return registry;
-    }
-
-    public void openAbilityBar(PlayerRef playerRef, String abilityBarId) {
+    /** Called when Q opens the ability bar */
+    public void refreshFromHeldWeapon(
+            PlayerRef playerRef,
+            Store<EntityStore> store,
+            Ref<EntityStore> entityRef
+    ) {
         var s = state.get(playerRef.getUsername());
 
-        // If nothing passed, DO NOT enable and DO NOT touch hotbar data
-        if (abilityBarId == null || abilityBarId.isBlank()) {
-            s.enabled = false;
-            return;
-        }
-
-        // Load if changed or not set yet
-        if (s.currentAbilityBarId == null || !abilityBarId.equals(s.currentAbilityBarId)) {
-            loadNewAbilityBar(playerRef, abilityBarId);
-        }
-
-        s.enabled = true;
-    }
-
-    public void loadNewAbilityBar(PlayerRef playerRef, String abilityBarId) {
-        var s = state.get(playerRef.getUsername());
-
-        if (abilityBarId == null || abilityBarId.isBlank()) {
-            return;
-        }
-
-        AbilityBarData bar = registry.getBar(abilityBarId);
-        if (bar == null || bar.Abilities == null) {
-            // Bar missing -> fill empty safely
-            s.currentAbilityBarId = abilityBarId;
-            s.selectedAbilitySlot = 1;
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        if (player == null) {
             s.fillAllEmpty();
             return;
         }
 
-        s.currentAbilityBarId = abilityBarId;
-        s.selectedAbilitySlot = 1;
+        String heldItemId = getHeldItemId(player);
+        if (heldItemId == null || heldItemId.isBlank()) {
+            s.fillAllEmpty();
+            return;
+        }
 
-        // IMPORTANT:
-        // bar.Abilities MUST now be a list of ITEM ASSET KEYS (strings),
-        // e.g. "Items/U_Abilities/Ability_DaggerLeap"
-        List<String> src = bar.Abilities;
+        List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
 
         for (int i = 0; i < 9; i++) {
-            String itemId = (i < src.size()) ? src.get(i) : null;
+            if (slots != null && i < slots.size()) {
+                WeaponAbilitySlot slot = slots.get(i);
 
-            if (itemId == null || itemId.isBlank()) {
-                itemId = AbilityRegistry.EMPTY_ITEM_ID;
+                String key = (slot == null) ? null : slot.Key;
+                String root = (slot == null) ? null : slot.RootInteraction;
+
+                if (key == null || key.isBlank()) key = AbilityRegistry.EMPTY_ITEM_ID;
+
+                s.hotbarItemIds[i] = key;
+                s.hotbarRootInteractions[i] = (root == null || root.isBlank()) ? null : root;
+            } else {
+                s.hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
+                s.hotbarRootInteractions[i] = null;
             }
-
-            s.hotbarItemIds[i] = itemId;
         }
 
-    }
-
-    public void useSlot(PlayerRef playerRef, int slot0to9) {
-        var s = state.get(playerRef.getUsername());
-
-        int resolved = (slot0to9 == 0) ? s.selectedAbilitySlot : slot0to9;
-        if (resolved < 1 || resolved > 9) return;
-
-        // selecting a slot also updates selected
-        if (slot0to9 != 0) {
-            s.selectedAbilitySlot = resolved;
-        }
-
-        String itemAsset = s.hotbarItemIds[resolved - 1];
-        if (itemAsset == null || itemAsset.isBlank()) {
-            itemAsset = AbilityRegistry.EMPTY_ITEM_ID;
-        }
-
-        // This is where your RootInteraction execution will go later.
-        // For now, log what item would execute.
-        System.out.println("USE ABILITY ITEM: " + itemAsset + " for " + playerRef.getUsername());
-
-        // TODO:
-        // - resolve the item by ItemAsset
-        // - execute its RootInteraction
-    }
-
-    public void closeAbilityBar(PlayerRef playerRef) {
-        var s = state.get(playerRef.getUsername());
-        s.enabled = false;
-        s.currentAbilityBarId = null;
         s.selectedAbilitySlot = 1;
-        s.fillAllEmpty();
+
+        playerRef.sendMessage(Message.raw(
+                "[AbilityBar] Loaded from held=" + heldItemId +
+                        " slot1=" + s.hotbarItemIds[0] +
+                        " root1=" + s.hotbarRootInteractions[0]
+        ));
     }
 
+    /** Called when player presses 1–9 */
+    public void useSlot(PlayerRef playerRef, int slot1to9) {
+        var s = state.get(playerRef.getUsername());
+
+        if (slot1to9 < 1 || slot1to9 > 9) return;
+
+        s.selectedAbilitySlot = slot1to9;
+
+        String itemId = s.hotbarItemIds[slot1to9 - 1];
+        String root = s.hotbarRootInteractions[slot1to9 - 1];
+
+        if (itemId == null || itemId.isBlank()) itemId = AbilityRegistry.EMPTY_ITEM_ID;
+
+        playerRef.sendMessage(Message.raw(
+                "[Ability] slot=" + slot1to9 +
+                        " itemId=" + itemId +
+                        " root=" + (root == null ? "null" : root)
+        ));
+
+        if (root == null || root.isBlank()) return;
+
+        boolean ok = interactionExecutor.execute(root, playerRef);
+        if (!ok) {
+            playerRef.sendMessage(Message.raw("[Ability] No handler registered for: " + root));
+        }
+    }
+
+    private static String getHeldItemId(Player player) {
+        ItemContainer hotbar = player.getInventory().getHotbar();
+        byte active = player.getInventory().getActiveHotbarSlot();
+
+        ItemStack stack = hotbar.getItemStack((short) active);
+        if (stack == null) return null;
+
+        return stack.getItemId();
+    }
 }

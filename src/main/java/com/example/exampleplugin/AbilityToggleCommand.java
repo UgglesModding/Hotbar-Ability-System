@@ -18,17 +18,22 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
+    private final AbilityRegistry abilityRegistry;
 
-    // Safe empty HUD (never pass null)
     private static final class EmptyHud extends CustomUIHud {
-        public EmptyHud(@Nonnull PlayerRef playerRef) { super(playerRef); }
-        @Override protected void build(@Nonnull UICommandBuilder ui) { }
+        public EmptyHud(@Nonnull PlayerRef ref) { super(ref); }
+        @Override protected void build(@Nonnull UICommandBuilder ui) {}
     }
 
-    public AbilityToggleCommand(AbilityHotbarState state, AbilitySystem abilitySystem) {
-        super("abilitybar", "Toggles the ability bar overlay.");
+    public AbilityToggleCommand(
+            AbilityHotbarState state,
+            AbilitySystem abilitySystem,
+            AbilityRegistry abilityRegistry
+    ) {
+        super("abilitybar", "Toggle ability bar");
         this.state = state;
         this.abilitySystem = abilitySystem;
+        this.abilityRegistry = abilityRegistry;
     }
 
     @Override
@@ -47,12 +52,12 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
             var hudManager = player.getHudManager();
 
             if (s.enabled) {
-                // TEMP: ensure the test bar is loaded when turning on
-                abilitySystem.loadNewAbilityBar(playerRef, null);
+                // Load ability slots from currently held weapon
+                abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
 
                 hudManager.setCustomHud(
                         playerRef,
-                        new AbilityHotbarHud(playerRef, abilitySystem.getRegistry(), state)
+                        new AbilityHotbarHud(playerRef, abilityRegistry, state)
                 );
 
                 ctx.sendMessage(Message.raw("Ability Bar: ON"));

@@ -1,0 +1,7 @@
+{
+  "Key": "Ability_Empty",
+  "Icon": "Icons/ItemsGenerated/Ability_Empty.png",
+  "MaxUses": 0,
+  "PowerMultiplier": 1.0,
+  "Handler": "Ability_Test"
+}

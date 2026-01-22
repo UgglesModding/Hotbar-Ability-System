@@ -1,0 +1,6 @@
+{
+  "Weapons": [
+    "Server/Item/Items/Weapons/CAO_Weapons/CAO_Weapon.json",
+    "Server/Item/Items/Weapons/CAO_Weapons/index.json"
+  ]
+}

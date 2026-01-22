@@ -1,7 +1,0 @@
-{
-  "ID": "uggles_combat:daggerleap",
-  "Name": "Dagger Leap",
-  "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
-  "ItemAsset": "Items/U_Abilities/Ability_DaggerLeap",
-  "Model": "Blocks/_Debug/Model.blockymodel"
-}

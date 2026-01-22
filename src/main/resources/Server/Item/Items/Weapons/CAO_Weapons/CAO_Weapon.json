@@ -1,0 +1,30 @@
+{
+  "ItemId": "CAO_Weapon",
+  "AbilitySlots": [
+    {
+      "Key": "Ability_DaggerLeap",
+      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "RootInteraction": "Ability_Test"
+    },
+    {
+      "Key": "Ability_Empty",
+      "Icon": "Icons/ItemsGenerated/Ability_Empty.png",
+      "MaxUses": 0,
+      "PowerMultiplier": 1.0,
+      "RootInteraction": ""
+    }
+  ],
+  "Interactions": {
+    "Ability1": "OpenAbilityBar"
+  },
+  "Icon": "Icons/ItemsGenerated/Example_Block.png",
+  "Model": "Blocks/_Debug/Model.blockymodel",
+  "TranslationProperties": {
+    "Name": "Tests1"
+  },
+  "Categories": [
+    "Items.Weapons"
+  ]
+}

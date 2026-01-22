@@ -1,0 +1,8 @@
+{
+  "Key": "Ability_DaggerLeap",
+  "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+  "MaxUses": 3,
+  "PowerMultiplier": 1.0,
+
+  "RootInteraction": "Ability_Test"
+}
