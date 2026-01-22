@@ -1,30 +1,38 @@
 package com.example.exampleplugin;
 
-import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AbilityHotbarState {
 
-    public static class State {
-        public volatile boolean enabled = false;
-        public volatile int selectedAbilitySlot = 1;
+    public static final class State {
+        public boolean enabled = false;
 
-        // IN-GAME ITEM IDS (Ability_DaggerLeap)
         public final String[] hotbarItemIds = new String[9];
-
-        // ROOT INTERACTION IDS (Root_Ability_DaggerLeap)
         public final String[] hotbarRootInteractions = new String[9];
 
+        // NEW
+        public final String[] hotbarAbilityIds = new String[9];     // weapon slot "ID"
+        public final boolean[] hotbarPluginFlags = new boolean[9];  // weapon slot "Plugin"
+
+        public int selectedAbilitySlot = 1;
+
         public void fillAllEmpty() {
-            Arrays.fill(hotbarItemIds, AbilityRegistry.EMPTY_ITEM_ID);
-            Arrays.fill(hotbarRootInteractions, null);
+            for (int i = 0; i < 9; i++) {
+                hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
+                hotbarRootInteractions[i] = null;
+
+                hotbarAbilityIds[i] = null;
+                hotbarPluginFlags[i] = false;
+            }
+            selectedAbilitySlot = 1;
         }
     }
 
-    private final ConcurrentHashMap<String, State> byUsername = new ConcurrentHashMap<>();
+    private final Map<String, State> byUser = new HashMap<>();
 
     public State get(String username) {
-        return byUsername.computeIfAbsent(username, k -> {
+        return byUser.computeIfAbsent(username, k -> {
             State s = new State();
             s.fillAllEmpty();
             return s;
