@@ -1,3 +1,4 @@
+// WeaponRegistry.java
 package com.example.exampleplugin;
 
 import com.google.gson.Gson;
@@ -45,10 +46,13 @@ public class WeaponRegistry {
         System.out.println("[WeaponRegistry] Loaded: " + data.ItemId + " from " + resourcePath);
     }
 
-    public List<String> resolveAbilityKeys(String itemId) {
+    /**
+     * Returns the AbilitySlots list for a weapon itemId.
+     * Supports Parent fallback: if the weapon has no AbilitySlots, we follow Parent until we find some.
+     */
+    public List<WeaponAbilitySlot> getAbilitySlots(String itemId) {
         if (itemId == null || itemId.isBlank()) return null;
 
-        // Parent fallback support (optional but useful)
         Set<String> visited = new HashSet<>();
         String cur = itemId;
 
@@ -62,18 +66,28 @@ public class WeaponRegistry {
             if (def == null) return null;
 
             if (def.AbilitySlots != null && !def.AbilitySlots.isEmpty()) {
-                ArrayList<String> out = new ArrayList<>();
-                for (WeaponAbilitySlot s : def.AbilitySlots) {
-                    if (s == null || s.Key == null || s.Key.isBlank()) continue;
-                    out.add(s.Key.trim());
-                }
-                return out;
+                return def.AbilitySlots;
             }
 
             cur = def.Parent;
         }
 
         return null;
+    }
+
+    /**
+     * Convenience: just the Key values (for older code paths).
+     */
+    public List<String> resolveAbilityKeys(String itemId) {
+        List<WeaponAbilitySlot> slots = getAbilitySlots(itemId);
+        if (slots == null) return null;
+
+        ArrayList<String> out = new ArrayList<>();
+        for (WeaponAbilitySlot s : slots) {
+            if (s == null || s.Key == null || s.Key.isBlank()) continue;
+            out.add(s.Key.trim());
+        }
+        return out;
     }
 
     private String normalizePath(String path) {

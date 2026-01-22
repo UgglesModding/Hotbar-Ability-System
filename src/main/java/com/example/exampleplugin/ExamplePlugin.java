@@ -24,33 +24,34 @@ public class ExamplePlugin extends JavaPlugin {
 
     @Override
     protected void setup() {
-        AbilityRegistry registry = new AbilityRegistry();
-        registry.loadAllFromResources();
 
-        AbilityInteractionExecutor executor = new AbilityInteractionExecutor();
-
+        // Load registries
         AbilityRegistry abilityRegistry = new AbilityRegistry();
         abilityRegistry.loadAllFromResources();
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
 
-        AbilitySystem abilitySystem = new AbilitySystem(abilityRegistry, weaponRegistry, state);
+        // Core system
+        AbilitySystem abilitySystem =
+                new AbilitySystem(weaponRegistry, state);
 
-// commands...
-// packet filter:
-        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
+        // Commands
+        this.getCommandRegistry().registerCommand(
+                new AbilityToggleCommand(state, abilitySystem, abilityRegistry)
+        );
+        this.getCommandRegistry().registerCommand(
+                new AbilityDebugCommand(state)
+        );
+        this.getCommandRegistry().registerCommand(
+                new GiveAbilityCommand(abilityRegistry)
+        );
 
-        this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
-        this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));
-        this.getCommandRegistry().registerCommand(new GiveAbilityCommand(registry));
-
-
-        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
-
+        // Packet filter
+        inboundFilter = PacketAdapters.registerInbound(
+                new AbilityHotbarPacketFilter(state, abilitySystem, abilityRegistry)
+        );
     }
-
-
 
     @Override
     protected void shutdown() {

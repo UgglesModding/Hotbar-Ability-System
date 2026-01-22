@@ -1,8 +1,8 @@
 package com.example.exampleplugin;
 
 public class WeaponAbilitySlot {
-    // You said you want to store them like:
-    // { "Key": "Ability_DaggerLeap" }
-    // Keep it simple for now.
-    public String Key;
+    public String Key;          // Ability_DaggerLeap
+    public String RootInteraction;         // Root_Ability_DaggerLeap
+    public int MaxUses;
+    public float PowerMultiplier;
 }

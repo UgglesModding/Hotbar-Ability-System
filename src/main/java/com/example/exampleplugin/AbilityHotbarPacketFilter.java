@@ -21,134 +21,91 @@ import javax.annotation.Nonnull;
 
 public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
-    // Turn this ON while you debug Q
-    private static final boolean DEBUG_INTERACTIONS = true;
-
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
+    private final AbilityRegistry abilityRegistry;
 
-    // Safe empty HUD
-    private static final class EmptyHud extends CustomUIHud {
-        public EmptyHud(@Nonnull PlayerRef playerRef) { super(playerRef); }
-        @Override protected void build(@Nonnull UICommandBuilder ui) { }
-    }
-
-    public AbilityHotbarPacketFilter(AbilityHotbarState state, AbilitySystem abilitySystem) {
+    public AbilityHotbarPacketFilter(
+            AbilityHotbarState state,
+            AbilitySystem abilitySystem,
+            AbilityRegistry abilityRegistry
+    ) {
         this.state = state;
         this.abilitySystem = abilitySystem;
+        this.abilityRegistry = abilityRegistry;
+    }
+
+    private static final class EmptyHud extends CustomUIHud {
+        public EmptyHud(@Nonnull PlayerRef ref) { super(ref); }
+        @Override protected void build(@Nonnull UICommandBuilder ui) {}
     }
 
     @Override
     public boolean test(@Nonnull PlayerRef playerRef, @Nonnull Packet packet) {
 
-        if (!(packet instanceof SyncInteractionChains chains)) {
-            return false;
-        }
+        if (!(packet instanceof SyncInteractionChains chains)) return false;
 
-        // Get state (always)
         var s = state.get(playerRef.getUsername());
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) return false;
 
-        // We need world thread access for HUD changes / inventory forcing
-        Ref<EntityStore> entityRef = playerRef.getReference();
-        if (entityRef == null || !entityRef.isValid()) {
-            return false;
-        }
-
-        Store<EntityStore> store = entityRef.getStore();
+        Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
         for (SyncInteractionChain chain : chains.updates) {
             if (!chain.initial) continue;
 
-            // ---- DEBUG: show every interaction type that arrives ----
-            if (DEBUG_INTERACTIONS) {
-                String dataStr = (chain.data == null) ? "null" : chain.data.toString();
-                playerRef.sendMessage(Message.raw(
-                        "[DBG] it=" + chain.interactionType.name()
-                                + " active=" + chain.activeHotbarSlot
-                                + " data=" + dataStr
-                ));
-                System.out.println("[DBG] " + playerRef.getUsername()
-                        + " it=" + chain.interactionType.name()
-                        + " active=" + chain.activeHotbarSlot
-                        + " data=" + dataStr);
-            }
-
-            // ---- 1) Q toggle: detect Ability1 ----
-            // We avoid hard enum constants so this compiles on any SDK:
-            // If your packets call it "Ability1", this will catch it.
-            String itName = chain.interactionType.name();
-            if (itName.equalsIgnoreCase("Ability1")) {
-
-                // Toggle HUD on world thread
+            // ---- Q / Ability1 ----
+            if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
                 world.execute(() -> {
-                    Player playerComponent = store.getComponent(entityRef, Player.getComponentType());
-                    if (playerComponent == null) return;
+                    Player player = store.getComponent(ref, Player.getComponentType());
+                    if (player == null) return;
 
-                    var hudManager = playerComponent.getHudManager();
-
+                    var hud = player.getHudManager();
                     s.enabled = !s.enabled;
 
                     if (s.enabled) {
-                        // Optional: ensure slot data isn't null (you can replace later with weapon-reading logic)
-                        // abilitySystem.setSlots(playerRef, ...);
-                        hudManager.setCustomHud(playerRef, new AbilityHotbarHud(playerRef, abilitySystem.getRegistry(), state));
-                        playerRef.sendMessage(Message.raw("[AbilityBar] ON (toggled by Ability1/Q)"));
+                        abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
+                        hud.setCustomHud(
+                                playerRef,
+                                new AbilityHotbarHud(playerRef, abilityRegistry, state)
+                        );
+                        playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
                     } else {
-                        hudManager.setCustomHud(playerRef, new EmptyHud(playerRef));
-                        playerRef.sendMessage(Message.raw("[AbilityBar] OFF (toggled by Ability1/Q)"));
+                        hud.setCustomHud(playerRef, new EmptyHud(playerRef));
+                        playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
                     }
                 });
 
-                // Block vanilla Ability1 from firing while we use it as a toggle
                 return true;
             }
 
-            // ---- 2) If bar is not enabled, don't block normal hotbar behavior ----
-            if (!s.enabled) {
-                continue;
-            }
+            // ---- Block hotbar & activate abilities ----
+            if (!s.enabled) continue;
 
-            // ---- 3) 1–9 key interception (SwapFrom) ----
-            if (chain.interactionType == InteractionType.SwapFrom) {
-                if (chain.data == null) continue;
+            if (chain.interactionType == InteractionType.SwapFrom && chain.data != null) {
+                int original = chain.activeHotbarSlot;
+                int target = chain.data.targetSlot;
+                if (target < 0 || target > 8) continue;
 
-                int originalSlot = chain.activeHotbarSlot; // 0..8
-                int targetSlot = chain.data.targetSlot;    // 0..8
-                if (targetSlot < 0 || targetSlot > 8) continue;
-
-                int slot1to9 = targetSlot + 1;
-                s.selectedAbilitySlot = slot1to9;
+                int slot = target + 1;
 
                 world.execute(() -> {
-                    Player playerComponent = store.getComponent(entityRef, Player.getComponentType());
-                    if (playerComponent == null) return;
+                    Player player = store.getComponent(ref, Player.getComponentType());
+                    if (player == null) return;
 
-                    // Force server-side slot back
-                    playerComponent.getInventory().setActiveHotbarSlot((byte) originalSlot);
-
-                    // Force client-side slot back (fix desync)
-                    SetActiveSlot setActiveSlotPacket = new SetActiveSlot(
-                            Inventory.HOTBAR_SECTION_ID,
-                            originalSlot
+                    player.getInventory().setActiveHotbarSlot((byte) original);
+                    playerRef.getPacketHandler().write(
+                            new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original)
                     );
-                    playerRef.getPacketHandler().write(setActiveSlotPacket);
 
-                    // Trigger ability logic
-                    abilitySystem.useSlot(playerRef, slot1to9);
-
-                    // Proof message
-                    playerRef.sendMessage(Message.raw(
-                            "[Ability] Pressed " + slot1to9 + " -> itemId=" + s.hotbarItemIds[slot1to9 - 1]
-                    ));
+                    abilitySystem.useSlot(playerRef, slot);
                 });
 
-                // Block vanilla hotbar switching
                 return true;
             }
         }
 
-        // If we didn’t explicitly block anything, allow packet through
         return false;
     }
 }

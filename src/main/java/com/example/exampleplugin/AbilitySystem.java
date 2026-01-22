@@ -1,7 +1,9 @@
+// AbilitySystem.java
 package com.example.exampleplugin;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
@@ -12,42 +14,20 @@ import java.util.List;
 
 public class AbilitySystem {
 
-    private final AbilityRegistry abilityRegistry;
     private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
 
-    public AbilitySystem(AbilityRegistry abilityRegistry, WeaponRegistry weaponRegistry, AbilityHotbarState state) {
-        this.abilityRegistry = abilityRegistry;
+    public AbilitySystem(WeaponRegistry weaponRegistry, AbilityHotbarState state) {
         this.weaponRegistry = weaponRegistry;
         this.state = state;
     }
 
-    public AbilityRegistry getRegistry() {
-        return abilityRegistry;
-    }
-
-    /** Overwrite hotbar slots directly (1..9), padding with EMPTY. */
-    public void setSlots(PlayerRef playerRef, List<String> itemIdsOrPaths) {
-        var s = state.get(playerRef.getUsername());
-
-        for (int i = 0; i < 9; i++) {
-            String v = (itemIdsOrPaths != null && i < itemIdsOrPaths.size()) ? itemIdsOrPaths.get(i) : null;
-            v = ItemIdUtil.normalizeItemId(v);
-
-            if (v == null || v.isBlank()) v = AbilityRegistry.EMPTY_ITEM_ID;
-
-            s.hotbarItemIds[i] = v;
-        }
-
-        s.selectedAbilitySlot = 1;
-
-        System.out.println("[AbilitySystem] setSlots user=" + playerRef.getUsername()
-                + " slot1=" + s.hotbarItemIds[0]
-                + " slot2=" + s.hotbarItemIds[1]);
-    }
-
-    /** Call this when enabling the HUD (Q) to pull AbilitySlots from currently held weapon. */
-    public void refreshFromHeldWeapon(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
+    /** Called when Q opens the ability bar */
+    public void refreshFromHeldWeapon(
+            PlayerRef playerRef,
+            Store<EntityStore> store,
+            Ref<EntityStore> entityRef
+    ) {
         var s = state.get(playerRef.getUsername());
 
         Player player = store.getComponent(entityRef, Player.getComponentType());
@@ -62,25 +42,36 @@ public class AbilitySystem {
             return;
         }
 
-        List<String> keys = weaponRegistry.resolveAbilityKeys(heldItemId);
+        List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
 
         for (int i = 0; i < 9; i++) {
-            String key = (keys != null && i < keys.size()) ? keys.get(i) : null;
-            key = ItemIdUtil.normalizeItemId(key);
+            if (slots != null && i < slots.size()) {
+                WeaponAbilitySlot slot = slots.get(i);
 
-            if (key == null || key.isBlank()) key = AbilityRegistry.EMPTY_ITEM_ID;
+                String key = (slot == null) ? null : slot.Key;
+                String root = (slot == null) ? null : slot.RootInteraction;
 
-            s.hotbarItemIds[i] = key;
+                if (key == null || key.isBlank()) key = AbilityRegistry.EMPTY_ITEM_ID;
+
+                s.hotbarItemIds[i] = key;
+                s.hotbarRootInteractions[i] = (root == null || root.isBlank()) ? null : root;
+            } else {
+                s.hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
+                s.hotbarRootInteractions[i] = null;
+            }
         }
 
         s.selectedAbilitySlot = 1;
 
-        System.out.println("[AbilitySystem] refreshFromHeldWeapon held=" + heldItemId
-                + " slot1=" + s.hotbarItemIds[0]
-                + " slot2=" + s.hotbarItemIds[1]
-                + " slot3=" + s.hotbarItemIds[2]);
+        // Helpful debug
+        playerRef.sendMessage(Message.raw(
+                "[AbilityBar] Loaded from held=" + heldItemId +
+                        " slot1=" + s.hotbarItemIds[0] +
+                        " root1=" + s.hotbarRootInteractions[0]
+        ));
     }
 
+    /** Called when player presses 1–9 */
     public void useSlot(PlayerRef playerRef, int slot1to9) {
         var s = state.get(playerRef.getUsername());
 
@@ -89,28 +80,30 @@ public class AbilitySystem {
         s.selectedAbilitySlot = slot1to9;
 
         String itemId = s.hotbarItemIds[slot1to9 - 1];
+        String root = s.hotbarRootInteractions[slot1to9 - 1];
+
         if (itemId == null || itemId.isBlank()) itemId = AbilityRegistry.EMPTY_ITEM_ID;
 
-        // Resolve ability json from item id (Ability_DaggerLeap -> AbilityData)
-        AbilityData ability = abilityRegistry.getAbilityByItemId(itemId);
+        playerRef.sendMessage(Message.raw(
+                "[Ability] slot=" + slot1to9 +
+                        " itemId=" + itemId +
+                        " root=" + (root == null ? "null" : root)
+        ));
 
-        String useInteraction = null;
-        if (ability != null && ability.Interactions != null) {
-            useInteraction = ability.Interactions.Use; // (assuming your AbilityData has Interactions.Use)
+        if (root == null || root.isBlank()) {
+            return;
         }
 
-        System.out.println("[AbilitySystem] USE slot=" + slot1to9
-                + " itemId=" + itemId
-                + " abilityJson=" + (ability == null ? "null" : ability.ID)
-                + " Use=" + useInteraction);
+        // NOTE: Actual interaction execution is the next step.
+        // Right now we just prove we resolved RootInteraction from the weapon json.
     }
 
     private static String getHeldItemId(Player player) {
         ItemContainer hotbar = player.getInventory().getHotbar();
-        byte active = player.getInventory().getActiveHotbarSlot(); // 0..8
+        byte active = player.getInventory().getActiveHotbarSlot();
 
-        // ✅ Correct getter name
-        ItemStack stack = hotbar.getItemStack((short) active); // :contentReference[oaicite:1]{index=1}
+        // Your SDK: ItemContainer#getItemStack(short)
+        ItemStack stack = hotbar.getItemStack((short) active);
         if (stack == null) return null;
 
         return stack.getItemId();
