@@ -21,19 +21,51 @@ public class WeaponRegistry {
     public void loadAllFromResources() {
         byItemId.clear();
 
-        WeaponIndex idx = readJson(WEAPON_INDEX_PATH, WeaponIndex.class);
-        if (idx == null || idx.Weapons == null) {
-            System.out.println("[WeaponRegistry] Missing/invalid: " + WEAPON_INDEX_PATH);
-            return;
-        }
-
-        for (String p : idx.Weapons) {
-            if (p == null || p.isBlank()) continue;
-            loadWeaponDef(normalizePath(p));
-        }
+        Set<String> visitedIndexes = new HashSet<>();
+        loadIndexRecursive(WEAPON_INDEX_PATH, visitedIndexes);
 
         System.out.println("[WeaponRegistry] Loaded weapon defs=" + byItemId.size());
     }
+
+    private void loadIndexRecursive(String indexPath, Set<String> visitedIndexes) {
+        String normalized = normalizePath(indexPath);
+
+        if (!visitedIndexes.add(normalized)) {
+            // prevents infinite loops (your index currently includes itself)
+            return;
+        }
+
+        WeaponIndex idx = readJson(normalized, WeaponIndex.class);
+        if (idx == null) {
+            System.out.println("[WeaponRegistry] Missing/invalid: " + normalized);
+            return;
+        }
+
+        // New format (your project)
+        if (idx.Includes != null) {
+            for (String p : idx.Includes) {
+                if (p == null || p.isBlank()) continue;
+
+                String np = normalizePath(p);
+
+                // If it looks like another index, recurse; otherwise load weapon def
+                if (np.endsWith("/index.json") || np.endsWith("index.json")) {
+                    loadIndexRecursive(np, visitedIndexes);
+                } else {
+                    loadWeaponDef(np);
+                }
+            }
+        }
+
+        // Old format (supported too)
+        if (idx.Weapons != null) {
+            for (String p : idx.Weapons) {
+                if (p == null || p.isBlank()) continue;
+                loadWeaponDef(normalizePath(p));
+            }
+        }
+    }
+
 
     private void loadWeaponDef(String resourcePath) {
         WeaponItemData data = readJson(resourcePath, WeaponItemData.class);

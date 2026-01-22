@@ -32,9 +32,9 @@ public class ExamplePlugin extends JavaPlugin {
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
 
-        // Core system
-        AbilitySystem abilitySystem =
-                new AbilitySystem(weaponRegistry, state);
+        AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
+        AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
+
 
         // Commands
         this.getCommandRegistry().registerCommand(

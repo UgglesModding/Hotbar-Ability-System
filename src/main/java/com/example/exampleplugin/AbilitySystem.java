@@ -16,10 +16,16 @@ public class AbilitySystem {
 
     private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
+    private final AbilityInteractionExecutor interactionExecutor;
 
-    public AbilitySystem(WeaponRegistry weaponRegistry, AbilityHotbarState state) {
+    public AbilitySystem(
+            WeaponRegistry weaponRegistry,
+            AbilityHotbarState state,
+            AbilityInteractionExecutor interactionExecutor
+    ) {
         this.weaponRegistry = weaponRegistry;
         this.state = state;
+        this.interactionExecutor = interactionExecutor;
     }
 
     /** Called when Q opens the ability bar */
@@ -63,7 +69,6 @@ public class AbilitySystem {
 
         s.selectedAbilitySlot = 1;
 
-        // Helpful debug
         playerRef.sendMessage(Message.raw(
                 "[AbilityBar] Loaded from held=" + heldItemId +
                         " slot1=" + s.hotbarItemIds[0] +
@@ -90,19 +95,18 @@ public class AbilitySystem {
                         " root=" + (root == null ? "null" : root)
         ));
 
-        if (root == null || root.isBlank()) {
-            return;
-        }
+        if (root == null || root.isBlank()) return;
 
-        // NOTE: Actual interaction execution is the next step.
-        // Right now we just prove we resolved RootInteraction from the weapon json.
+        boolean ok = interactionExecutor.execute(root, playerRef);
+        if (!ok) {
+            playerRef.sendMessage(Message.raw("[Ability] No handler registered for: " + root));
+        }
     }
 
     private static String getHeldItemId(Player player) {
         ItemContainer hotbar = player.getInventory().getHotbar();
         byte active = player.getInventory().getActiveHotbarSlot();
 
-        // Your SDK: ItemContainer#getItemStack(short)
         ItemStack stack = hotbar.getItemStack((short) active);
         if (stack == null) return null;
 

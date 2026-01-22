@@ -36,11 +36,8 @@ public final class AbilityItemResolver {
      * This assumes your generated icons follow this naming convention.
      */
     public static String itemIdToIconPath(String itemId) {
-        if (itemId == null || itemId.isBlank()) {
-            itemId = AbilityRegistry.EMPTY_ITEM_ID;
-        }
-
-        // UI TexturePath is RELATIVE to the .ui file: Common/UI/Custom/
+        if (itemId == null || itemId.isBlank()) itemId = AbilityRegistry.EMPTY_ITEM_ID;
         return "Icons/ItemsGenerated/" + itemId + ".png";
     }
+
 }
