@@ -1,9 +1,6 @@
-// WeaponRegistry.java
 package com.example.exampleplugin;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
+import com.google.gson.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -11,12 +8,11 @@ import java.util.*;
 
 public class WeaponRegistry {
 
-    private final Gson gson = new GsonBuilder().create();
-    private final Map<String, WeaponItemData> byItemId = new HashMap<>();
+    // change if your root index path is different
+    private static final String WEAPON_INDEX_PATH = "Server/Item/Items/Weapons/CAO_Weapons/index.json";
 
-    // Your fixed index path (matches your setup)
-    public static final String WEAPON_INDEX_PATH =
-            "Server/Item/Items/Weapons/CAO_Weapons/index.json";
+    private final Map<String, WeaponDefinition> byItemId = new HashMap<>();
+    private final Gson gson = new GsonBuilder().create();
 
     public void loadAllFromResources() {
         byItemId.clear();
@@ -27,29 +23,31 @@ public class WeaponRegistry {
         System.out.println("[WeaponRegistry] Loaded weapon defs=" + byItemId.size());
     }
 
+    public List<WeaponAbilitySlot> getAbilitySlots(String itemId) {
+        WeaponDefinition def = byItemId.get(itemId);
+        if (def == null) return null;
+        return def.AbilitySlots;
+    }
+
     private void loadIndexRecursive(String indexPath, Set<String> visitedIndexes) {
         String normalized = normalizePath(indexPath);
+        if (!visitedIndexes.add(normalized)) return;
 
-        if (!visitedIndexes.add(normalized)) {
-            // prevents infinite loops (your index currently includes itself)
+        JsonObject obj = readJsonObject(normalized);
+        if (obj == null) {
+            System.out.println("[WeaponRegistry] Missing/invalid index: " + normalized);
             return;
         }
 
-        WeaponIndex idx = readJson(normalized, WeaponIndex.class);
-        if (idx == null) {
-            System.out.println("[WeaponRegistry] Missing/invalid: " + normalized);
-            return;
-        }
+        WeaponIndex idx = gson.fromJson(obj, WeaponIndex.class);
+        if (idx == null) return;
 
-        // New format (your project)
         if (idx.Includes != null) {
             for (String p : idx.Includes) {
                 if (p == null || p.isBlank()) continue;
-
                 String np = normalizePath(p);
 
-                // If it looks like another index, recurse; otherwise load weapon def
-                if (np.endsWith("/index.json") || np.endsWith("index.json")) {
+                if (np.endsWith("index.json")) {
                     loadIndexRecursive(np, visitedIndexes);
                 } else {
                     loadWeaponDef(np);
@@ -57,7 +55,6 @@ public class WeaponRegistry {
             }
         }
 
-        // Old format (supported too)
         if (idx.Weapons != null) {
             for (String p : idx.Weapons) {
                 if (p == null || p.isBlank()) continue;
@@ -66,81 +63,102 @@ public class WeaponRegistry {
         }
     }
 
+    private void loadWeaponDef(String weaponPath) {
+        String normalized = normalizePath(weaponPath);
 
-    private void loadWeaponDef(String resourcePath) {
-        WeaponItemData data = readJson(resourcePath, WeaponItemData.class);
-        if (data == null || data.ItemId == null || data.ItemId.isBlank()) {
-            System.out.println("[WeaponRegistry] Invalid weapon json: " + resourcePath);
+        JsonObject obj = readJsonObject(normalized);
+        if (obj == null) {
+            System.out.println("[WeaponRegistry] Missing/invalid weapon json: " + normalized);
             return;
         }
 
-        byItemId.put(data.ItemId, data);
-        System.out.println("[WeaponRegistry] Loaded: " + data.ItemId + " from " + resourcePath);
-    }
+        // Manual parse so we can accept Plugin as boolean OR string
+        WeaponDefinition def = new WeaponDefinition();
+        def.ItemId = getString(obj, "ItemId");
 
-    /**
-     * Returns the AbilitySlots list for a weapon itemId.
-     * Supports Parent fallback: if the weapon has no AbilitySlots, we follow Parent until we find some.
-     */
-    public List<WeaponAbilitySlot> getAbilitySlots(String itemId) {
-        if (itemId == null || itemId.isBlank()) return null;
+        JsonArray slotsArr = obj.getAsJsonArray("AbilitySlots");
+        List<WeaponAbilitySlot> slots = new ArrayList<>();
+        if (slotsArr != null) {
+            for (JsonElement el : slotsArr) {
+                if (!el.isJsonObject()) continue;
+                JsonObject sObj = el.getAsJsonObject();
 
-        Set<String> visited = new HashSet<>();
-        String cur = itemId;
+                WeaponAbilitySlot slot = new WeaponAbilitySlot();
+                slot.Key = getString(sObj, "Key");
+                slot.RootInteraction = getString(sObj, "RootInteraction");
+                slot.ID = getString(sObj, "ID"); // capitalized key
+                slot.Plugin = getBooleanLenient(sObj, "Plugin");
+                slot.MaxUses = getInt(sObj, "MaxUses", 0);
+                slot.PowerMultiplier = getFloat(sObj, "PowerMultiplier", 1.0f);
+                slot.Icon = getString(sObj, "Icon");
 
-        while (cur != null && !cur.isBlank()) {
-            if (!visited.add(cur)) {
-                System.out.println("[WeaponRegistry] Parent loop detected for " + itemId);
-                return null;
+                slots.add(slot);
             }
-
-            WeaponItemData def = byItemId.get(cur);
-            if (def == null) return null;
-
-            if (def.AbilitySlots != null && !def.AbilitySlots.isEmpty()) {
-                return def.AbilitySlots;
-            }
-
-            cur = def.Parent;
         }
 
-        return null;
-    }
+        def.AbilitySlots = slots;
 
-    /**
-     * Convenience: just the Key values (for older code paths).
-     */
-    public List<String> resolveAbilityKeys(String itemId) {
-        List<WeaponAbilitySlot> slots = getAbilitySlots(itemId);
-        if (slots == null) return null;
-
-        ArrayList<String> out = new ArrayList<>();
-        for (WeaponAbilitySlot s : slots) {
-            if (s == null || s.Key == null || s.Key.isBlank()) continue;
-            out.add(s.Key.trim());
+        if (def.ItemId == null || def.ItemId.isBlank()) {
+            System.out.println("[WeaponRegistry] Weapon missing ItemId: " + normalized);
+            return;
         }
-        return out;
+
+        byItemId.put(def.ItemId, def);
+        System.out.println("[WeaponRegistry] Registered: " + def.ItemId + " slots=" + slots.size());
     }
 
-    private String normalizePath(String path) {
-        String p = path.trim().replace('\\', '/');
-        while (p.startsWith("/")) p = p.substring(1);
-        return p;
-    }
+    private JsonObject readJsonObject(String resourcePath) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath);
+        if (is == null) return null;
 
-    private <T> T readJson(String resourcePath, Class<T> clazz) {
-        InputStream stream = this.getClass().getClassLoader().getResourceAsStream(resourcePath);
-        if (stream == null) {
-            System.out.println("[WeaponRegistry] Resource not found: " + resourcePath);
+        try (InputStreamReader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            JsonElement el = JsonParser.parseReader(r);
+            if (!el.isJsonObject()) return null;
+            return el.getAsJsonObject();
+        } catch (Throwable t) {
+            System.out.println("[WeaponRegistry] Failed to read " + resourcePath + " : " + t.getMessage());
             return null;
         }
+    }
 
-        try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-            return gson.fromJson(reader, clazz);
-        } catch (Exception e) {
-            System.out.println("[WeaponRegistry] JSON parse error in " + resourcePath);
-            e.printStackTrace();
-            return null;
-        }
+    private static String normalizePath(String p) {
+        String s = p.replace("\\", "/").trim();
+        while (s.startsWith("/")) s = s.substring(1);
+        return s;
+    }
+
+    private static String getString(JsonObject obj, String key) {
+        JsonElement e = obj.get(key);
+        if (e == null || e.isJsonNull()) return null;
+        try { return e.getAsString(); } catch (Throwable ignored) { return null; }
+    }
+
+    private static int getInt(JsonObject obj, String key, int def) {
+        JsonElement e = obj.get(key);
+        if (e == null || e.isJsonNull()) return def;
+        try { return e.getAsInt(); } catch (Throwable ignored) { return def; }
+    }
+
+    private static float getFloat(JsonObject obj, String key, float def) {
+        JsonElement e = obj.get(key);
+        if (e == null || e.isJsonNull()) return def;
+        try { return e.getAsFloat(); } catch (Throwable ignored) { return def; }
+    }
+
+    // Accepts: true/false OR "True"/"False"/"true"/"false"
+    private static boolean getBooleanLenient(JsonObject obj, String key) {
+        JsonElement e = obj.get(key);
+        if (e == null || e.isJsonNull()) return false;
+
+        try {
+            if (e.isJsonPrimitive()) {
+                JsonPrimitive p = e.getAsJsonPrimitive();
+                if (p.isBoolean()) return p.getAsBoolean();
+                if (p.isString()) return Boolean.parseBoolean(p.getAsString().trim().toLowerCase());
+                if (p.isNumber()) return p.getAsInt() != 0;
+            }
+        } catch (Throwable ignored) {}
+
+        return false;
     }
 }

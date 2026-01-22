@@ -6,14 +6,8 @@
       "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "RootInteraction": "Ability_Test"
-    },
-    {
-      "Key": "Ability_Empty",
-      "Icon": "Icons/ItemsGenerated/Ability_Empty.png",
-      "MaxUses": 0,
-      "PowerMultiplier": 1.0,
-      "RootInteraction": ""
+      "ID": "combat_overhaul:dagger_leap",
+      "Plugin": true
     }
   ],
   "Interactions": {
@@ -22,7 +16,7 @@
   "Icon": "Icons/ItemsGenerated/Example_Block.png",
   "Model": "Blocks/_Debug/Model.blockymodel",
   "TranslationProperties": {
-    "Name": "Tests1"
+    "Name": "Test CAO Weapon"
   },
   "Categories": [
     "Items.Weapons"

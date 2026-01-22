@@ -8,9 +8,12 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
 public class ExamplePlugin extends JavaPlugin {
 
-    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+    private static final HytaleLogger LOGGER =
+            HytaleLogger.forEnclosingClass();
 
+    // ONE shared state instance
     private final AbilityHotbarState state = new AbilityHotbarState();
+
     private PacketFilter inboundFilter;
 
     public ExamplePlugin(JavaPluginInit init) {
@@ -25,18 +28,25 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     protected void setup() {
 
-        // Load registries
+        // --- Registries ---
         AbilityRegistry abilityRegistry = new AbilityRegistry();
         abilityRegistry.loadAllFromResources();
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
 
-        AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
-        AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
+        // KEEP: RootInteraction executor for future use
+        AbilityInteractionExecutor interactionExecutor =
+                new AbilityInteractionExecutor();
 
+        // Ability system (uses plugin + root paths)
+        AbilitySystem abilitySystem =
+                new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
-        // Commands
+        // ✅ REGISTER PLUGIN ABILITIES
+        AbilityDispatch.register(new CAO_DoAbility());
+
+        // --- Commands ---
         this.getCommandRegistry().registerCommand(
                 new AbilityToggleCommand(state, abilitySystem, abilityRegistry)
         );
@@ -46,11 +56,16 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(
                 new GiveAbilityCommand(abilityRegistry)
         );
+        this.getCommandRegistry().registerCommand(
+                new AbilityIntrospectCommand()
+        );
 
-        // Packet filter
+        // --- Packet Filter ---
         inboundFilter = PacketAdapters.registerInbound(
                 new AbilityHotbarPacketFilter(state, abilitySystem, abilityRegistry)
         );
+
+        LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
     }
 
     @Override
