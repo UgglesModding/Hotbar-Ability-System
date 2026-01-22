@@ -40,6 +40,10 @@ public class AbilityIntrospectCommand extends AbstractPlayerCommand {
 
             ctx.sendMessage(Message.raw("--- Player methods ---"));
             dump(ctx, player);
+
+            ctx.sendMessage(Message.raw("--- ExternalData methods ---"));
+            dump(ctx, store.getExternalData());
+
         });
     }
 
