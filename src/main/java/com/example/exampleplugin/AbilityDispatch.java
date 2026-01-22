@@ -16,15 +16,15 @@ public final class AbilityDispatch {
         plugins.add(plugin);
     }
 
-    public static boolean dispatch(String id, AbilityContext ctx) {
-        for (IAbilityPlugin p : plugins) {
+    public static boolean dispatch(PackagedAbilityData data, AbilityContext context) {
+        for (IAbilityPlugin plugin : plugins) {
             try {
-                if (p.CAO_DoAbility(id, ctx)) return true;
+                if (plugin.CAO_DoAbility(data, context)) return true;
             } catch (Throwable t) {
-                if (ctx != null && ctx.playerRef != null) {
-                    ctx.playerRef.sendMessage(Message.raw(
-                            "[CAO] Ability plugin error: " + t.getClass().getSimpleName()
-                    ));
+                if (context != null && context.playerRef != null) {
+                    context.playerRef.sendMessage(
+                            Message.raw("[CAO] Ability plugin error: " + t.getClass().getSimpleName())
+                    );
                 }
             }
         }

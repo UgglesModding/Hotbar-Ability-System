@@ -8,22 +8,34 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 public final class AbilityContext {
-    public final PlayerRef playerRef;
-    public final Store<EntityStore> store;
-    public final Ref<EntityStore> ref;
-    public final World world;
-    public final Player player;
 
-    private AbilityContext(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> ref, World world, Player player) {
+    public final PlayerRef playerRef;
+    public final Player player;
+    public final Store<EntityStore> store;
+    public final Ref<EntityStore> entityRef;
+    public final World world;
+
+    private AbilityContext(
+            PlayerRef playerRef,
+            Player player,
+            Store<EntityStore> store,
+            Ref<EntityStore> entityRef,
+            World world
+    ) {
         this.playerRef = playerRef;
-        this.store = store;
-        this.ref = ref;
-        this.world = world;
         this.player = player;
+        this.store = store;
+        this.entityRef = entityRef;
+        this.world = world;
     }
 
-    public static AbilityContext from(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> ref, World world) {
-        Player player = store.getComponent(ref, Player.getComponentType());
-        return new AbilityContext(playerRef, store, ref, world, player);
+    public static AbilityContext from(
+            PlayerRef playerRef,
+            Store<EntityStore> store,
+            Ref<EntityStore> entityRef,
+            World world
+    ) {
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        return new AbilityContext(playerRef, player, store, entityRef, world);
     }
 }
