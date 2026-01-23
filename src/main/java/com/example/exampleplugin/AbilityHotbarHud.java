@@ -11,9 +11,11 @@ public class AbilityHotbarHud extends CustomUIHud {
     private final AbilityRegistry registry;
     private final AbilityHotbarState state;
 
-    public AbilityHotbarHud(@Nonnull PlayerRef playerRef,
-                            @Nonnull AbilityRegistry registry,
-                            @Nonnull AbilityHotbarState state) {
+    public AbilityHotbarHud(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull AbilityRegistry registry,
+            @Nonnull AbilityHotbarState state
+    ) {
         super(playerRef);
         this.registry = registry;
         this.state = state;
@@ -25,8 +27,7 @@ public class AbilityHotbarHud extends CustomUIHud {
 
         var s = state.get(this.getPlayerRef().getUsername());
 
-        // Always paint icons from state (no bar id concept anymore)
-        applyIcon(ui, "IconZero", AbilityRegistry.EMPTY_ITEM_ID);
+        // ✅ Slot0 is static in the UI (ConfirmIcon). Do NOT override it.
 
         for (int i = 0; i < 9; i++) {
             applyIcon(ui, "Icon" + (i + 1), s.hotbarItemIds[i]);
@@ -38,12 +39,13 @@ public class AbilityHotbarHud extends CustomUIHud {
             itemId = AbilityRegistry.EMPTY_ITEM_ID;
         }
 
-        // icon path convention in your pack: Common/Icons/ItemsGenerated/<ItemId>.png
         String iconPath = AbilityItemResolver.itemIdToIconPath(itemId);
 
         ui.set("#" + nodeId + ".Visible", true);
-        ui.set("#" + nodeId + ".Background",
-                "PatchStyle(TexturePath: \"" + iconPath + "\")"
+
+        ui.set(
+                "#" + nodeId + ".Background",
+                "PatchStyle(TexturePath: \"" + iconPath + "\", Border: 0)"
         );
     }
 }

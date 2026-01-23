@@ -8,7 +8,8 @@
 @SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
 @BarBackground  = PatchStyle(TexturePath: "ContainerDecoration.png", Border: 8);
 
-@EmptyIcon = PatchStyle(TexturePath: "U_Abilities/Ability_Empty.png");
+@EmptyIcon = PatchStyle(TexturePath: "UAbilities_Ability_Empty.png");
+@ConfirmIcon = PatchStyle(TexturePath: "UAbilities_Ability_Confirm.png");
 
 Group #Root {
   Anchor: (Bottom: 120, Width: 520, Height: 72);
@@ -24,7 +25,7 @@ Group #Root {
 
       Group #IconZero {
         Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-        Background: @EmptyIcon;
+        Background: @ConfirmIcon;
       }
 
       Label #KeyZero {

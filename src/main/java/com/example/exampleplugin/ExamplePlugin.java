@@ -55,9 +55,6 @@ public class ExamplePlugin extends JavaPlugin {
                 new AbilityDebugCommand(state)
         );
         this.getCommandRegistry().registerCommand(
-                new GiveAbilityCommand(abilityRegistry)
-        );
-        this.getCommandRegistry().registerCommand(
                 new AbilityIntrospectCommand()
         );
 
