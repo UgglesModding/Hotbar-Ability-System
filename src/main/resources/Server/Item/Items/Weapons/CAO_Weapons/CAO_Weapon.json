@@ -1,80 +1,84 @@
 {
   "ItemId": "CAO_Weapon",
+  "AbilityBar": "AbilityBar.ui",
   "AbilitySlots": [
     {
-      "Key": "Ability_DaggerLeap",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+      "Key": "Ability_Random_Teleport",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:dagger_leap",
+      "ID": "combat_abilities:randomteleport",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_Trololololol",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 30,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:trololol",
+      "ID": "combat_abilities::trololol",
       "Plugin": true
-    },{
-      "Key": "Ability_AbilityPower",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+    },
+    {
+      "Key": "Ability_FullReload",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:abilityPower",
+      "ID": "combat_abilities:fullreload",
       "Plugin": true
-    },{
-      "Key": "Ability_Recharge",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
+    },
+    {
+      "Key": "Ability_ReloadRandom",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:recharge",
+      "ID": "combat_abilities:reloadrandom",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_ButterFingers",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:butter_fingers",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_Shuffle",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:shuffle",
+      "ID": "combat_abilities:shuffle",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_CoinFlip",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:coinflip",
+      "ID": "combat_abilities:coinflip",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_SuperJump",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:super_jump",
+      "ID": "combat_abilities:super_jump",
       "Plugin": true
-    },{
+    },
+    {
       "Key": "Ability_FullHeal",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:full_heal",
+      "ID": "combat_abilities:full_heal",
       "Plugin": true
     }
   ],
   "Interactions": {
-    "Ability1": "OpenAbilityBar"
+    "Ability1": "OpenAbilityBar",
+    "Primary": "Longsword_Attack",
+    "Secondary": "Longsword_Block_Damage"
   },
-  "Icon": "Icons/ItemsGenerated/Example_Block.png",
-  "Model": "Blocks/_Debug/Model.blockymodel",
+  "Icon": "Icons/ItemsGenerated/Weapon_Sword_Mithril.png",
+  "Model": "Items/Weapons/Longsword/Adamantite.blockymodel",
   "TranslationProperties": {
     "Name": "Test CAO Weapon"
   },
   "Categories": [
     "Items.Weapons"
-  ]
+  ],
+  "Texture": "Items/Weapons/Longsword/Adamantite_Texture.png",
+  "PlayerAnimationsId": "Longsword"
 }

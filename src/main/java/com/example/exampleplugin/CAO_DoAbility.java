@@ -1,6 +1,7 @@
 package com.example.exampleplugin;
 
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.CommandManager;
 
 import java.util.Random;
 
@@ -15,31 +16,31 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
         switch (Data.ID) {
 
-            case "combat_overhaul:dagger_leap":
+            case "combat_abilities:randomteleport":
                 return abilityDaggerLeap(Data, Context);
 
-            case "combat_overhaul:trololol":
+            case "combat_abilities::trololol":
                 return abilityTrololol(Data, Context);
 
-            case "combat_overhaul:abilityPower":
+            case "combat_abilities:fullreload":
                 return abilityPower(Data, Context);
 
-            case "combat_overhaul:recharge":
+            case "combat_abilities:reloadrandom":
                 return abilityRecharge(Data, Context);
 
-            case "combat_overhaul:shuffle":
+            case "combat_abilities:shuffle":
                 return abilityShuffle(Data, Context);
 
-            case "combat_overhaul:coinflip":
+            case "combat_abilities:coinflip":
                 return abilityCoinflip(Data, Context);
 
-            case "combat_overhaul:super_jump":
+            case "combat_abilities:super_jump":
                 return abilitySuperJump(Data, Context);
 
-            case "combat_overhaul:full_heal":
+            case "combat_abilities:full_heal":
                 return abilityFullHeal(Data, Context);
 
-            case "combat_overhaul:butter_fingers":
+            case "combat_abilities:butter_fingers":
                 return abilityButterFingers(Data, Context);
 
             default:
@@ -69,7 +70,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
         Context.playerRef.sendMessage(Message.raw("Trolololololol"));
@@ -78,7 +79,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityPower(PackagedAbilityData Data, AbilityContext Context) {
         Context.playerRef.sendMessage(
-                Message.raw("[CAO] Power ability reserved for future system")
+                Message.raw("Power ability reserved for future system")
         );
         return true;
     }
@@ -86,20 +87,20 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityRecharge(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
 
         boolean ok = CAO_AbilityApi.AddUseToRandomAbility(Context.playerRef, Data.ID);
         Context.playerRef.sendMessage(Message.raw(
-                ok ? "[CAO] Recharge: +1 use added to a random ability" : "[CAO] Recharge: no valid ability to refill"
+                ok ? "Recharge: +1 use added to a random ability" : "Recharge: no valid ability to refill"
         ));
         return true;
     }
 
     private boolean abilityShuffle(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
 
@@ -116,7 +117,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
         }
 
         if (poolCount <= 0) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Shuffle: no pool"));
+            Context.playerRef.sendMessage(Message.raw("Shuffle: no pool"));
             return true;
         }
 
@@ -132,18 +133,23 @@ public class CAO_DoAbility implements IAbilityPlugin {
         return true;
     }
 
-    private boolean abilityCoinflip(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+    private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext ctx) {
+        if (!CAO_AbilityApi.SpendUse(ctx.playerRef, data.ID)) {
+            // out of uses
             return true;
         }
 
         boolean heads = rng.nextBoolean();
-        Context.playerRef.sendMessage(Message.raw(
-                heads
-                        ? "[CAO] Coinflip: lucky! (heal effect not wired yet)"
-                        : "[CAO] Coinflip: unlucky! (damage effect not wired yet)"
-        ));
+
+        if (heads) {
+            ctx.playerRef.sendMessage(Message.raw("Lucky!"));
+            CommandManager.get().handleCommand(ctx.playerRef, "heal");
+        } else {
+            ctx.playerRef.sendMessage(Message.raw("Unlucky!"));
+            CommandManager.get().handleCommand(ctx.playerRef, "neardeath");
+        }
+
+
         return true;
     }
 

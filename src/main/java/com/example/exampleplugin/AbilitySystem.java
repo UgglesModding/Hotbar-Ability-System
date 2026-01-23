@@ -19,8 +19,6 @@ public class AbilitySystem {
 
     private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
-
-    // KEEP: your existing interaction executor system
     private final AbilityInteractionExecutor interactionExecutor;
 
     public AbilitySystem(
@@ -50,6 +48,9 @@ public class AbilitySystem {
 
         List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
 
+        // Which UI file should be appended when opening the bar for this weapon
+        s.abilityBarUiPath = weaponRegistry.getAbilityBarPath(heldItemId);
+
         for (int i = 0; i < 9; i++) {
             if (slots != null && i < slots.size()) {
                 WeaponAbilitySlot slot = slots.get(i);
@@ -66,7 +67,7 @@ public class AbilitySystem {
                 s.hotbarAbilityIds[i] = (slot == null) ? null : slot.ID;
                 s.hotbarPluginFlags[i] = slot != null && slot.Plugin;
 
-                // NEW: store the rest of the JSON-defined fields
+                // store the rest of the JSON-defined fields
                 s.hotbarMaxUses[i] = (slot == null) ? 0 : slot.MaxUses;
                 s.hotbarPowerMultipliers[i] = (slot == null) ? 1.0f : slot.PowerMultiplier;
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
@@ -97,6 +98,7 @@ public class AbilitySystem {
 
         playerRef.sendMessage(Message.raw(
                 "[AbilityBar] Loaded held=" + heldItemId +
+                        " ui=" + (s.abilityBarUiPath == null ? "AbilityBar.ui" : s.abilityBarUiPath) +
                         " slot1Key=" + s.hotbarItemIds[0] +
                         " slot1Id=" + s.hotbarAbilityIds[0] +
                         " slot1Plugin=" + s.hotbarPluginFlags[0] +
@@ -113,84 +115,72 @@ public class AbilitySystem {
         int slot0to8 = slot1to9 - 1;
         s.selectedAbilitySlot = slot1to9;
 
-        // Plugin dispatch info
-        boolean Plugin = s.hotbarPluginFlags[slot0to8];
-        String ID = s.hotbarAbilityIds[slot0to8];
+        boolean plugin = s.hotbarPluginFlags[slot0to8];
+        String id = s.hotbarAbilityIds[slot0to8];
+        String rootInteraction = s.hotbarRootInteractions[slot0to8];
 
-        // KEEP: RootInteraction info (not used for plugin dispatch)
-        String RootInteraction = s.hotbarRootInteractions[slot0to8];
-
-        playerRef.sendMessage(Message.raw(
-                "[Ability] slot=" + slot1to9 +
-                        " Plugin=" + Plugin +
-                        " ID=" + (ID == null ? "null" : ID) +
-                        " RootInteraction=" + (RootInteraction == null ? "null" : RootInteraction)
-        ));
-
-        // If Plugin=true => do plugin pipeline (RootInteraction ignored here for now)
-        if (Plugin) {
-            if (ID == null || ID.isBlank()) {
+        // Plugin abilities
+        if (plugin) {
+            if (id == null || id.isBlank()) {
                 playerRef.sendMessage(Message.raw("[Ability] Plugin=true but ID missing."));
                 return;
             }
 
-            int MaxUses = s.hotbarMaxUses[slot0to8];
-            int RemainingUses = s.hotbarRemainingUses[slot0to8];
+            String key = s.hotbarItemIds[slot0to8];
+            int maxUses = s.hotbarMaxUses[slot0to8];
+            int remainingUses = s.hotbarRemainingUses[slot0to8];
+            float powerMultiplier = s.hotbarPowerMultipliers[slot0to8];
 
-            // Enforce uses only if MaxUses > 0
-            if (MaxUses > 0 && RemainingUses <= 0) {
-                playerRef.sendMessage(Message.raw("[Ability] Out of uses for ID=" + ID));
-                return;
-            }
-
-            String Key = s.hotbarItemIds[slot0to8];
-            float PowerMultiplier = s.hotbarPowerMultipliers[slot0to8];
-            String Icon = s.hotbarIcons[slot0to8];
-
-            PackagedAbilityData Data = new PackagedAbilityData(
+            PackagedAbilityData data = new PackagedAbilityData(
                     slot0to8,
-                    Key,
-                    ID,
-                    MaxUses,
-                    PowerMultiplier,
-                    RootInteraction,
-                    RemainingUses
+                    key,
+                    id,
+                    maxUses,
+                    powerMultiplier,
+                    rootInteraction,
+                    remainingUses
             );
-
 
             world.execute(() -> {
                 AbilityContext ctx = AbilityContext.from(playerRef, store, ref, world);
 
-                boolean handled = AbilityDispatch.dispatch(Data, ctx);
+                boolean handled = AbilityDispatch.dispatch(data, ctx);
                 if (!handled) {
-                    playerRef.sendMessage(Message.raw("[Ability] No plugin handled ID=" + ID));
+                    playerRef.sendMessage(Message.raw("[Ability] No plugin handled ID=" + id));
                     return;
                 }
 
-                // Consume a use ONLY if limited
-                if (MaxUses > 0) {
-                    int newRemaining = Math.max(0, s.hotbarRemainingUses[slot0to8] - 1);
-                    s.hotbarRemainingUses[slot0to8] = newRemaining;
-
-                    playerRef.sendMessage(Message.raw(
-                            "[Ability] Used " + ID + " (" + newRemaining + "/" + MaxUses + " left)"
-                    ));
+                if (s.enabled && ctx.player != null) {
+                    ctx.player.getHudManager().setCustomHud(
+                            ctx.playerRef,
+                            new AbilityHotbarHud(ctx.playerRef, state)
+                    );
                 }
             });
 
             return;
         }
 
-        // Plugin=false: KEEP your existing RootInteraction executor behavior
-        if (RootInteraction == null || RootInteraction.isBlank()) return;
+        // Non-plugin interaction path
+        if (rootInteraction == null || rootInteraction.isBlank()) return;
 
         world.execute(() -> {
-            boolean ok = interactionExecutor.execute(RootInteraction, playerRef, store, ref, world);
+            boolean ok = interactionExecutor.execute(rootInteraction, playerRef, store, ref, world);
             if (!ok) {
-                playerRef.sendMessage(Message.raw("[Ability] No handler registered for RootInteraction: " + RootInteraction));
+                playerRef.sendMessage(Message.raw("[Ability] No handler registered for RootInteraction: " + rootInteraction));
+            }
+
+            // Also rebuild for non-plugin if needed (optional, but consistent)
+            Player player = store.getComponent(ref, Player.getComponentType());
+            if (s.enabled && player != null) {
+                player.getHudManager().setCustomHud(
+                        playerRef,
+                        new AbilityHotbarHud(playerRef, state)
+                );
             }
         });
     }
+
 
     private static String getHeldItemId(Player player) {
         ItemContainer hotbar = player.getInventory().getHotbar();

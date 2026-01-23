@@ -23,16 +23,13 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
-    private final AbilityRegistry abilityRegistry;
 
     public AbilityHotbarPacketFilter(
             AbilityHotbarState state,
-            AbilitySystem abilitySystem,
-            AbilityRegistry abilityRegistry
+            AbilitySystem abilitySystem
     ) {
         this.state = state;
         this.abilitySystem = abilitySystem;
-        this.abilityRegistry = abilityRegistry;
     }
 
     private static final class EmptyHud extends CustomUIHud {
@@ -68,7 +65,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                         abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         hud.setCustomHud(
                                 playerRef,
-                                new AbilityHotbarHud(playerRef, abilityRegistry, state)
+                                new AbilityHotbarHud(playerRef, state)
                         );
                         playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
                     } else {

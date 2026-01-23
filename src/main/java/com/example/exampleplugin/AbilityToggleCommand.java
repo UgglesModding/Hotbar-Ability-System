@@ -18,7 +18,6 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
-    private final AbilityRegistry abilityRegistry;
 
     private static final class EmptyHud extends CustomUIHud {
         public EmptyHud(@Nonnull PlayerRef ref) { super(ref); }
@@ -27,13 +26,11 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
     public AbilityToggleCommand(
             AbilityHotbarState state,
-            AbilitySystem abilitySystem,
-            AbilityRegistry abilityRegistry
+            AbilitySystem abilitySystem
     ) {
         super("abilitybar", "Toggle ability bar");
         this.state = state;
         this.abilitySystem = abilitySystem;
-        this.abilityRegistry = abilityRegistry;
     }
 
     @Override
@@ -57,7 +54,7 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
                 hudManager.setCustomHud(
                         playerRef,
-                        new AbilityHotbarHud(playerRef, abilityRegistry, state)
+                        new AbilityHotbarHud(playerRef, state)
                 );
 
                 ctx.sendMessage(Message.raw("Ability Bar: ON"));
