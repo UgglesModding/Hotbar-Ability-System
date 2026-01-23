@@ -1,65 +1,57 @@
 {
   "ItemId": "CAO_Weapon",
+  "AbilityBar": "AbilityBar.ui",
   "AbilitySlots": [
     {
       "Key": "Ability_DaggerLeap",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:dagger_leap",
       "Plugin": true
     },{
       "Key": "Ability_Trololololol",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 30,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:trololol",
       "Plugin": true
     },{
       "Key": "Ability_AbilityPower",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:abilityPower",
       "Plugin": true
     },{
       "Key": "Ability_Recharge",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:recharge",
       "Plugin": true
     },{
       "Key": "Ability_ButterFingers",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:butter_fingers",
       "Plugin": true
     },{
       "Key": "Ability_Shuffle",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:shuffle",
       "Plugin": true
     },{
       "Key": "Ability_CoinFlip",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:coinflip",
       "Plugin": true
     },{
       "Key": "Ability_SuperJump",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:super_jump",
       "Plugin": true
     },{
       "Key": "Ability_FullHeal",
-      "Icon": "Icons/ItemsGenerated/Ability_DaggerLeap.png",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_overhaul:full_heal",

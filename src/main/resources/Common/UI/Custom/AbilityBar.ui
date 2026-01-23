@@ -8,8 +8,9 @@
 @SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
 @BarBackground  = PatchStyle(TexturePath: "ContainerDecoration.png", Border: 8);
 
-@EmptyIcon = PatchStyle(TexturePath: "UAbilities_Ability_Empty.png");
-@ConfirmIcon = PatchStyle(TexturePath: "UAbilities_Ability_Confirm.png");
+@EmptyIcon = PatchStyle(TexturePath: "UAbilities/Ability_Empty.png");
+@ConfirmIcon = PatchStyle(TexturePath: "UAbilities/Ability_Confirm.png");
+@UseBar = PatchStyle(TexturePath: "SlotFill.png", Border: 0);
 
 Group #Root {
   Anchor: (Bottom: 120, Width: 520, Height: 72);
@@ -43,6 +44,11 @@ Group #Root {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
+        Group #Bar1 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
+
         Group #Icon1 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -59,6 +65,11 @@ Group #Root {
       Group #Slot2 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
+
+        Group #Bar2 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
 
         Group #Icon2 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -77,6 +88,11 @@ Group #Root {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
+        Group #Bar3 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
+
         Group #Icon3 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -93,6 +109,11 @@ Group #Root {
       Group #Slot4 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
+
+        Group #Bar4 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
 
         Group #Icon4 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -111,6 +132,11 @@ Group #Root {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
+        Group #Bar5 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
+
         Group #Icon5 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -127,6 +153,11 @@ Group #Root {
       Group #Slot6 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
+
+        Group #Bar6 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
 
         Group #Icon6 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -145,6 +176,11 @@ Group #Root {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
+        Group #Bar7 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
+
         Group #Icon7 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -162,6 +198,11 @@ Group #Root {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
+        Group #Bar8 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
+
         Group #Icon8 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -178,6 +219,11 @@ Group #Root {
       Group #Slot9 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
+
+        Group #Bar9 {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @UseBar;
+        }
 
         Group #Icon9 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
