@@ -34,8 +34,9 @@ public class ExamplePlugin extends JavaPlugin {
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
+        CAO_AbilityApi.Init(state);
+        CAO_CommandApi.Init(this);
 
-        // KEEP: RootInteraction executor for future use
         AbilityInteractionExecutor interactionExecutor =
                 new AbilityInteractionExecutor();
 
@@ -43,7 +44,7 @@ public class ExamplePlugin extends JavaPlugin {
         AbilitySystem abilitySystem =
                 new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
-        // ✅ REGISTER PLUGIN ABILITIES
+
         AbilityDispatch.register(new CAO_DoAbility());
 
         // --- Commands ---
