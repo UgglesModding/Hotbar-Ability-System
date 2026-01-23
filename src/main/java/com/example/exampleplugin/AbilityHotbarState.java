@@ -8,13 +8,16 @@ public class AbilityHotbarState {
     public static final class State {
         public boolean enabled = false;
 
+        // Which .ui file to append when this player's hotbar is opened.
+        // Comes from the held weapon JSON field: "AbilityBar".
+        public String abilityBarUiPath = null;
+
         public final String[] hotbarItemIds = new String[9];
         public final String[] hotbarRootInteractions = new String[9];
 
         public final String[] hotbarAbilityIds = new String[9];
         public final boolean[] hotbarPluginFlags = new boolean[9];
 
-        // ✅ These were missing (your compile errors)
         public final int[] hotbarMaxUses = new int[9];
         public final float[] hotbarPowerMultipliers = new float[9];
         public final String[] hotbarIcons = new String[9];
@@ -23,6 +26,8 @@ public class AbilityHotbarState {
         public int selectedAbilitySlot = 1;
 
         public void fillAllEmpty() {
+            abilityBarUiPath = null;
+
             for (int i = 0; i < 9; i++) {
                 hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
                 hotbarRootInteractions[i] = null;

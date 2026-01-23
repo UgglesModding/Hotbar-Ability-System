@@ -29,6 +29,12 @@ public class WeaponRegistry {
         return def.AbilitySlots;
     }
 
+    public String getAbilityBarPath(String itemId) {
+        WeaponDefinition def = byItemId.get(itemId);
+        if (def == null) return null;
+        return def.AbilityBar;
+    }
+
     private void loadIndexRecursive(String indexPath, Set<String> visitedIndexes) {
         String normalized = normalizePath(indexPath);
         if (!visitedIndexes.add(normalized)) return;
@@ -75,6 +81,7 @@ public class WeaponRegistry {
         // Manual parse so we can accept Plugin as boolean OR string
         WeaponDefinition def = new WeaponDefinition();
         def.ItemId = getString(obj, "ItemId");
+        def.AbilityBar = getString(obj, "AbilityBar");
 
         JsonArray slotsArr = obj.getAsJsonArray("AbilitySlots");
         List<WeaponAbilitySlot> slots = new ArrayList<>();

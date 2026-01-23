@@ -2,15 +2,26 @@
   FontSize: 12,
   RenderBold: true,
   TextColor: #ffffff(0.9),
-  OutlineColor: #000000(0.4)
+  OutlineColor: #000000(1.0)
 );
 
 @SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
 @BarBackground  = PatchStyle(TexturePath: "ContainerDecoration.png", Border: 8);
 
-@EmptyIcon = PatchStyle(TexturePath: "UAbilities/Ability_Empty.png");
-@ConfirmIcon = PatchStyle(TexturePath: "UAbilities/Ability_Confirm.png");
-@UseBar = PatchStyle(TexturePath: "SlotFill.png", Border: 0);
+@EmptyIcon = PatchStyle(TexturePath: "Ability_Empty.png");
+@ConfirmIcon = PatchStyle(TexturePath: "Ability_Confirm.png");
+
+@Use100 = PatchStyle(TexturePath: "Slots/Bubbles/100.png", Border: 0);
+@Use90 = PatchStyle(TexturePath: "Slots/Bubbles/90.png", Border: 0);
+@Use80 = PatchStyle(TexturePath: "Slots/Bubbles/80.png", Border: 0);
+@Use70 = PatchStyle(TexturePath: "Slots/Bubbles/70.png", Border: 0);
+@Use60 = PatchStyle(TexturePath: "Slots/Bubbles/60.png", Border: 0);
+@Use50 = PatchStyle(TexturePath: "Slots/Bubbles/50.png", Border: 0);
+@Use40 = PatchStyle(TexturePath: "Slots/Bubbles/40.png", Border: 0);
+@Use30 = PatchStyle(TexturePath: "Slots/Bubbles/30.png", Border: 0);
+@Use20 = PatchStyle(TexturePath: "Slots/Bubbles/20.png", Border: 0);
+@Use10 = PatchStyle(TexturePath: "Slots/Bubbles/10.png", Border: 0);
+@Use0 = PatchStyle(TexturePath: "Slots/Bubbles/0.png", Border: 0);
 
 Group #Root {
   Anchor: (Bottom: 120, Width: 520, Height: 72);
@@ -40,14 +51,23 @@ Group #Root {
       LayoutMode: Left;
       Anchor: (Left: 48, Top: 20, Width: 424, Height: 40);
 
+      // ================= SLOT 1 =================
       Group #Slot1 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar1 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar10  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar11  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar12  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar13  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar14  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar15  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar16  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar17  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar18  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar19  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar110 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon1 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -62,14 +82,23 @@ Group #Root {
       }
       Group #Gap1 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 2 =================
       Group #Slot2 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar2 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar20  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar21  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar22  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar23  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar24  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar25  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar26  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar27  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar28  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar29  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar210 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon2 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -84,14 +113,23 @@ Group #Root {
       }
       Group #Gap2 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 3 =================
       Group #Slot3 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar3 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar30  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar31  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar32  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar33  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar34  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar35  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar36  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar37  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar38  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar39  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar310 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon3 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -106,14 +144,23 @@ Group #Root {
       }
       Group #Gap3 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 4 =================
       Group #Slot4 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar4 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar40  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar41  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar42  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar43  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar44  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar45  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar46  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar47  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar48  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar49  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar410 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon4 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -128,14 +175,23 @@ Group #Root {
       }
       Group #Gap4 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 5 =================
       Group #Slot5 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar5 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar50  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar51  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar52  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar53  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar54  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar55  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar56  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar57  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar58  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar59  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar510 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon5 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -150,14 +206,23 @@ Group #Root {
       }
       Group #Gap5 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 6 =================
       Group #Slot6 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar6 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar60  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar61  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar62  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar63  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar64  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar65  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar66  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar67  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar68  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar69  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar610 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon6 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -172,14 +237,23 @@ Group #Root {
       }
       Group #Gap6 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 7 =================
       Group #Slot7 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar7 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar70  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar71  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar72  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar73  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar74  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar75  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar76  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar77  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar78  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar79  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar710 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon7 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -194,14 +268,23 @@ Group #Root {
       }
       Group #Gap7 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 8 =================
       Group #Slot8 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar8 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar80  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar81  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar82  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar83  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar84  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar85  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar86  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar87  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar88  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar89  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar810 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon8 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -216,14 +299,23 @@ Group #Root {
       }
       Group #Gap8 { Anchor: (Width: 8, Height: 1); }
 
+      // ================= SLOT 9 =================
       Group #Slot9 {
         Anchor: (Width: 40, Height: 40);
         Background: @SlotBackground;
 
-        Group #Bar9 {
-          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
-          Background: @UseBar;
-        }
+        Group #Bar90  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar91  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar92  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar93  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar94  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar95  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar96  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar97  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar98  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar99  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar910 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
 
         Group #Icon9 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);

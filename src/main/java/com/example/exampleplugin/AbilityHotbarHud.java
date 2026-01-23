@@ -8,44 +8,62 @@ import javax.annotation.Nonnull;
 
 public class AbilityHotbarHud extends CustomUIHud {
 
-    private final AbilityRegistry registry;
+    // Must match the slot size in AbilityBar.ui
+    private static final int SLOT_PIXELS = 40;
+
     private final AbilityHotbarState state;
 
     public AbilityHotbarHud(
             @Nonnull PlayerRef playerRef,
-            @Nonnull AbilityRegistry registry,
             @Nonnull AbilityHotbarState state
     ) {
         super(playerRef);
-        this.registry = registry;
         this.state = state;
     }
 
     @Override
     protected void build(@Nonnull UICommandBuilder ui) {
-        ui.append("AbilityBar.ui");
-
         var s = state.get(this.getPlayerRef().getUsername());
 
-        // ✅ Slot0 is static in the UI (ConfirmIcon). Do NOT override it.
+        // Weapon-provided UI file (falls back to AbilityBar.ui)
+        String uiPath = (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank())
+                ? "AbilityBar.ui"
+                : s.abilityBarUiPath;
 
-        for (int i = 0; i < 9; i++) {
-            applyIcon(ui, "Icon" + (i + 1), s.hotbarItemIds[i]);
+        ui.append(uiPath);
+
+        // We no longer swap icons on open. Only update the use bars (Bar1..Bar9).
+        for (int i = 1; i <= 9; i++) {
+            applyUseBar(ui, i, s.hotbarRemainingUses[i - 1], s.hotbarMaxUses[i - 1]);
         }
     }
 
-    private void applyIcon(UICommandBuilder ui, String nodeId, String itemId) {
-        if (itemId == null || itemId.isBlank()) {
-            itemId = AbilityRegistry.EMPTY_ITEM_ID;
+    private static final int BAR_STEPS = 10;
+
+    private void applyUseBar(UICommandBuilder ui, int barIndex1to9, int remaining, int max) {
+        int level;
+
+        if (max <= 0) {
+            // Unlimited -> show 100
+            level = BAR_STEPS;
+        } else if (remaining <= 0) {
+            level = 0;
+        } else {
+            float ratio = Math.min(1.0f, (float) remaining / (float) max);
+            level = Math.round(ratio * BAR_STEPS);
+            if (level < 0) level = 0;
+            if (level > BAR_STEPS) level = BAR_STEPS;
         }
 
-        String iconPath = AbilityItemResolver.itemIdToIconPath(itemId);
+        // Hide Bar{slot}{0..10}
+        for (int i = 0; i <= BAR_STEPS; i++) {
+            ui.set("#Bar" + barIndex1to9 + i + ".Visible", false);
+        }
 
-        ui.set("#" + nodeId + ".Visible", true);
-
-        ui.set(
-                "#" + nodeId + ".Background",
-                "PatchStyle(TexturePath: \"" + iconPath + "\", Border: 0)"
-        );
+        // Show the chosen level (including 0)
+        ui.set("#Bar" + barIndex1to9 + level + ".Visible", true);
     }
+
+
+
 }

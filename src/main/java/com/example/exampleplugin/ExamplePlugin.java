@@ -44,12 +44,11 @@ public class ExamplePlugin extends JavaPlugin {
         AbilitySystem abilitySystem =
                 new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
-
         AbilityDispatch.register(new CAO_DoAbility());
 
         // --- Commands ---
         this.getCommandRegistry().registerCommand(
-                new AbilityToggleCommand(state, abilitySystem, abilityRegistry)
+                new AbilityToggleCommand(state, abilitySystem)
         );
         this.getCommandRegistry().registerCommand(
                 new AbilityDebugCommand(state)
@@ -60,7 +59,7 @@ public class ExamplePlugin extends JavaPlugin {
 
         // --- Packet Filter ---
         inboundFilter = PacketAdapters.registerInbound(
-                new AbilityHotbarPacketFilter(state, abilitySystem, abilityRegistry)
+                new AbilityHotbarPacketFilter(state, abilitySystem)
         );
 
         LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
