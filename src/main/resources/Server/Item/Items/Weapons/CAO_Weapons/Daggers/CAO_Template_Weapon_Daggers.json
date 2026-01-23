@@ -1,7 +1,7 @@
 {
   "ItemId": "CAO_Template_Weapon_Daggers",
   "TranslationProperties": {
-    "Name": "CAO_Template_Daggers"
+    "Name": "COA Daggers"
   },
   "Model": "Items/Weapons/Dagger/Iron.blockymodel",
   "Texture": "Items/Weapons/Dagger/Iron_Texture.png",
@@ -12,9 +12,6 @@
   "Quality": "Template",
   "ItemSoundSetId": "ISS_Weapon_Blade_Small",
   "ItemLevel": 30,
-  "Categories": [
-    "Items.Weapons"
-  ],
   "IconProperties": {
     "Rotation": [
       45,
@@ -157,5 +154,8 @@
   },
   "MaxDurability": 80,
   "DurabilityLossOnHit": 0.1,
-  "Parent": "CAO_Weapon"
+  "Parent": "Template_Weapon_Daggers",
+  "Categories": [
+    "Items.Weapons"
+  ]
 }
