@@ -1,8 +1,5 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
-import com.example.exampleplugin.AbilityContext;
-import com.example.exampleplugin.AbilityDispatch;
-import com.example.exampleplugin.PackagedAbilityData;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;

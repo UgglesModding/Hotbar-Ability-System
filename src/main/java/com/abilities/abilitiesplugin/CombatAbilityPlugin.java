@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
@@ -6,7 +6,7 @@ import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
-public class ExamplePlugin extends JavaPlugin {
+public class CombatAbilityPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER =
             HytaleLogger.forEnclosingClass();
@@ -16,7 +16,7 @@ public class ExamplePlugin extends JavaPlugin {
 
     private PacketFilter inboundFilter;
 
-    public ExamplePlugin(JavaPluginInit init) {
+    public CombatAbilityPlugin(JavaPluginInit init) {
         super(init);
         LOGGER.atInfo().log(
                 "Loaded %s version %s",

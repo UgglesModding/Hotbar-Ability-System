@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 public final class ItemIdUtil {
     private ItemIdUtil() {}
