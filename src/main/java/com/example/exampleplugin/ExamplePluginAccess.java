@@ -9,12 +9,12 @@ public final class ExamplePluginAccess {
 
     private ExamplePluginAccess() {}
 
-    /** Called once from ExamplePlugin.setup() */
+
     public static void Init(AbilityHotbarState state) {
         StateRef = state;
     }
 
-    /** Access a player's hotbar state safely */
+
     public static AbilityHotbarState.State State(PlayerRef playerRef) {
         if (StateRef == null) {
             throw new IllegalStateException("ExamplePluginAccess not initialized");

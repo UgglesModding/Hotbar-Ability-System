@@ -25,14 +25,13 @@ public class AbilityHotbarHud extends CustomUIHud {
     protected void build(@Nonnull UICommandBuilder ui) {
         var s = state.get(this.getPlayerRef().getUsername());
 
-        // Weapon-provided UI file (falls back to AbilityBar.ui)
+
         String uiPath = (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank())
                 ? "AbilityBar.ui"
                 : s.abilityBarUiPath;
 
         ui.append(uiPath);
 
-        // We no longer swap icons on open. Only update the use bars (Bar1..Bar9).
         for (int i = 1; i <= 9; i++) {
             applyUseBar(ui, i, s.hotbarRemainingUses[i - 1], s.hotbarMaxUses[i - 1]);
         }

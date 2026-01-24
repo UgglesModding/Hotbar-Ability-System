@@ -53,9 +53,6 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(
                 new AbilityDebugCommand(state)
         );
-        this.getCommandRegistry().registerCommand(
-                new AbilityIntrospectCommand()
-        );
 
         // --- Packet Filter ---
         inboundFilter = PacketAdapters.registerInbound(
