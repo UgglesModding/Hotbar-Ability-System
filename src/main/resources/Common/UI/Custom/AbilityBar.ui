@@ -2,7 +2,7 @@
   FontSize: 12,
   RenderBold: true,
   TextColor: #ffffff(0.9),
-  OutlineColor: #000000(1.0)
+  OutlineColor: #ffffff(1.0)
 );
 
 @SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
@@ -12,16 +12,16 @@
 @ConfirmIcon = PatchStyle(TexturePath: "Ability_Confirm.png");
 
 @Use100 = PatchStyle(TexturePath: "Slots/Bubbles/100.png", Border: 0);
-@Use90 = PatchStyle(TexturePath: "Slots/Bubbles/90.png", Border: 0);
-@Use80 = PatchStyle(TexturePath: "Slots/Bubbles/80.png", Border: 0);
-@Use70 = PatchStyle(TexturePath: "Slots/Bubbles/70.png", Border: 0);
-@Use60 = PatchStyle(TexturePath: "Slots/Bubbles/60.png", Border: 0);
-@Use50 = PatchStyle(TexturePath: "Slots/Bubbles/50.png", Border: 0);
-@Use40 = PatchStyle(TexturePath: "Slots/Bubbles/40.png", Border: 0);
-@Use30 = PatchStyle(TexturePath: "Slots/Bubbles/30.png", Border: 0);
-@Use20 = PatchStyle(TexturePath: "Slots/Bubbles/20.png", Border: 0);
-@Use10 = PatchStyle(TexturePath: "Slots/Bubbles/10.png", Border: 0);
-@Use0 = PatchStyle(TexturePath: "Slots/Bubbles/0.png", Border: 0);
+@Use90  = PatchStyle(TexturePath: "Slots/Bubbles/90.png",  Border: 0);
+@Use80  = PatchStyle(TexturePath: "Slots/Bubbles/80.png",  Border: 0);
+@Use70  = PatchStyle(TexturePath: "Slots/Bubbles/70.png",  Border: 0);
+@Use60  = PatchStyle(TexturePath: "Slots/Bubbles/60.png",  Border: 0);
+@Use50  = PatchStyle(TexturePath: "Slots/Bubbles/50.png",  Border: 0);
+@Use40  = PatchStyle(TexturePath: "Slots/Bubbles/40.png",  Border: 0);
+@Use30  = PatchStyle(TexturePath: "Slots/Bubbles/30.png",  Border: 0);
+@Use20  = PatchStyle(TexturePath: "Slots/Bubbles/20.png",  Border: 0);
+@Use10  = PatchStyle(TexturePath: "Slots/Bubbles/10.png",  Border: 0);
+@Use0   = PatchStyle(TexturePath: "Slots/Bubbles/0.png",   Border: 0);
 
 Group #Root {
   Anchor: (Bottom: 120, Width: 520, Height: 72);
@@ -68,10 +68,9 @@ Group #Root {
         Group #Bar19  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar110 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon1 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/RandomTeleport.png");
         }
 
         Label #Key1 {
@@ -99,10 +98,9 @@ Group #Root {
         Group #Bar29  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar210 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon2 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/Trolololol.png");
         }
 
         Label #Key2 {
@@ -130,10 +128,9 @@ Group #Root {
         Group #Bar39  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar310 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon3 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/FullReload.png");
         }
 
         Label #Key3 {
@@ -161,10 +158,9 @@ Group #Root {
         Group #Bar49  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar410 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon4 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/ReloadRandom.png");
         }
 
         Label #Key4 {
@@ -191,7 +187,6 @@ Group #Root {
         Group #Bar58  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
         Group #Bar59  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar510 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
-
 
         Group #Icon5 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -223,7 +218,6 @@ Group #Root {
         Group #Bar69  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar610 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon6 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
           Background: @EmptyIcon;
@@ -254,10 +248,9 @@ Group #Root {
         Group #Bar79  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar710 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon7 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/CoinFlip.png");
         }
 
         Label #Key7 {
@@ -284,7 +277,6 @@ Group #Root {
         Group #Bar88  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
         Group #Bar89  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar810 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
-
 
         Group #Icon8 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
@@ -316,10 +308,9 @@ Group #Root {
         Group #Bar99  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
         Group #Bar910 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
 
-
         Group #Icon9 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: @EmptyIcon;
+          Background: PatchStyle(TexturePath:"Abilities/FullHeal.png");
         }
 
         Label #Key9 {

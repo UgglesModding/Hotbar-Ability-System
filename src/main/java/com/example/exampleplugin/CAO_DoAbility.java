@@ -17,31 +17,25 @@ public class CAO_DoAbility implements IAbilityPlugin {
         switch (Data.ID) {
 
             case "combat_abilities:randomteleport":
-                return abilityDaggerLeap(Data, Context);
+                return abilityRandomTeleport(Data, Context);
 
             case "combat_abilities::trololol":
                 return abilityTrololol(Data, Context);
 
             case "combat_abilities:fullreload":
-                return abilityPower(Data, Context);
+                return abilityFullReload(Data, Context);
 
             case "combat_abilities:reloadrandom":
-                return abilityRecharge(Data, Context);
+                return abilityReloadRandom(Data, Context);
 
-            case "combat_abilities:shuffle":
-                return abilityShuffle(Data, Context);
+            case "combat_abilities:empty":
+                return abilityEmpty(Data, Context);
 
             case "combat_abilities:coinflip":
                 return abilityCoinflip(Data, Context);
 
-            case "combat_abilities:super_jump":
-                return abilitySuperJump(Data, Context);
-
             case "combat_abilities:full_heal":
                 return abilityFullHeal(Data, Context);
-
-            case "combat_abilities:butter_fingers":
-                return abilityButterFingers(Data, Context);
 
             default:
                 return false;
@@ -52,19 +46,25 @@ public class CAO_DoAbility implements IAbilityPlugin {
     // Ability functions (one per case)
     // ----------------------------
 
-    private boolean abilityDaggerLeap(PackagedAbilityData Data, AbilityContext Context) {
+    private boolean abilityRandomTeleport(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+            //Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
             return true;
         }
-
         // Spend only when we actually cast
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
             Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
             return true;
         }
+        float FullPower = Data.PowerMultiplier;
 
-        Context.playerRef.sendMessage(Message.raw("[CAO] dagger_leap cast (movement API not wired yet)"));
+        float dx = (rng.nextFloat() * 2f - 1f) * FullPower;
+        float dy = (rng.nextFloat() * 2f - 1f) * FullPower;
+        float dz = (rng.nextFloat() * 2f - 1f) * FullPower;
+
+        String cmd = "tp ~" + dx + " ~" + dy + " ~" + dz;
+
+        CommandManager.get().handleCommand(Context.playerRef, cmd);
         return true;
     }
 
@@ -77,109 +77,59 @@ public class CAO_DoAbility implements IAbilityPlugin {
         return true;
     }
 
-    private boolean abilityPower(PackagedAbilityData Data, AbilityContext Context) {
-        Context.playerRef.sendMessage(
-                Message.raw("Power ability reserved for future system")
-        );
+
+    private boolean abilityFullReload(PackagedAbilityData data, AbilityContext Context) {
+        if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) return true;
+
+        boolean didRefill = CAO_AbilityApi.RefillAllAbilitiesWithUses(Context.playerRef, data.ID);
+
+        CAO_AbilityApi.UpdateHud(Context);
+
         return true;
     }
 
+    private boolean abilityReloadRandom(PackagedAbilityData data, AbilityContext Context) {
+        if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) return true;
 
-    private boolean abilityRecharge(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
-            return true;
-        }
+        boolean didRefill = CAO_AbilityApi.RefillRandomAbilityWithUses(Context.playerRef, data.ID);
 
-        boolean ok = CAO_AbilityApi.AddUseToRandomAbility(Context.playerRef, Data.ID);
-        Context.playerRef.sendMessage(Message.raw(
-                ok ? "Recharge: +1 use added to a random ability" : "Recharge: no valid ability to refill"
-        ));
+        CAO_AbilityApi.UpdateHud(Context);
+
         return true;
     }
 
-    private boolean abilityShuffle(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
-            return true;
-        }
-
-        var s = ExamplePluginAccess.State(Context.playerRef);
-
-        String[] pool = new String[9];
-        int poolCount = 0;
-
-        for (int i = 0; i < 9; i++) {
-            String other = s.hotbarAbilityIds[i];
-            if (other == null || other.isBlank()) continue;
-            if (other.equalsIgnoreCase(Data.ID)) continue;
-            pool[poolCount++] = other;
-        }
-
-        if (poolCount <= 0) {
-            Context.playerRef.sendMessage(Message.raw("Shuffle: no pool"));
-            return true;
-        }
-
-        for (int i = 0; i < 9; i++) {
-            String cur = s.hotbarAbilityIds[i];
-            if (cur == null || cur.isBlank()) continue;
-            if (cur.equalsIgnoreCase(Data.ID)) continue;
-
-            s.hotbarAbilityIds[i] = pool[rng.nextInt(poolCount)];
-        }
-
-        Context.playerRef.sendMessage(Message.raw("[CAO] Shuffle: abilities randomized"));
-        return true;
-    }
-
-    private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext ctx) {
-        if (!CAO_AbilityApi.SpendUse(ctx.playerRef, data.ID)) {
-            // out of uses
+    private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
+        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
             return true;
         }
 
         boolean heads = rng.nextBoolean();
 
         if (heads) {
-            ctx.playerRef.sendMessage(Message.raw("Lucky!"));
-            CommandManager.get().handleCommand(ctx.playerRef, "heal");
+            Context.playerRef.sendMessage(Message.raw("Lucky!"));
+            CommandManager.get().handleCommand(Context.playerRef, "heal");
         } else {
-            ctx.playerRef.sendMessage(Message.raw("Unlucky!"));
-            CommandManager.get().handleCommand(ctx.playerRef, "neardeath");
+            Context.playerRef.sendMessage(Message.raw("Unlucky!"));
+            CommandManager.get().handleCommand(Context.playerRef, "neardeath");
         }
-
-
-        return true;
-    }
-
-    private boolean abilitySuperJump(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
-            return true;
-        }
-
-        Context.playerRef.sendMessage(Message.raw("[CAO] SuperJump (not wired yet: needs movement API)"));
         return true;
     }
 
     private boolean abilityFullHeal(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
 
-        Context.playerRef.sendMessage(Message.raw("[CAO] FullHeal (not wired yet: needs health API)"));
+        CommandManager.get().handleCommand(Context.playerRef, "heal");
         return true;
     }
 
-    private boolean abilityButterFingers(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
-            return true;
-        }
+    private boolean abilityEmpty(PackagedAbilityData Data, AbilityContext Context) {
 
-        Context.playerRef.sendMessage(Message.raw("[CAO] ButterFingers: (drop weapon not wired yet)"));
+        Context.playerRef.sendMessage(Message.raw("[CAO] slot marked as empty"));
         return true;
     }
 }

@@ -4,8 +4,8 @@
   "AbilitySlots": [
     {
       "Key": "Ability_Random_Teleport",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
+      "MaxUses": 10,
+      "PowerMultiplier": 6.0,
       "ID": "combat_abilities:randomteleport",
       "Plugin": true
     },
@@ -31,18 +31,16 @@
       "Plugin": true
     },
     {
-      "Key": "Ability_ButterFingers",
+      "Key": "Ability_Empty",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_overhaul:butter_fingers",
-      "Plugin": true
+      "ID": "combat_abilities:empty"
     },
     {
-      "Key": "Ability_Shuffle",
+      "Key": "Ability_Empty",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:shuffle",
-      "Plugin": true
+      "ID": "combat_abilities:empty"
     },
     {
       "Key": "Ability_CoinFlip",
@@ -52,11 +50,10 @@
       "Plugin": true
     },
     {
-      "Key": "Ability_SuperJump",
+      "Key": "Ability_Empty",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:super_jump",
-      "Plugin": true
+      "ID": "combat_abilities:empty"
     },
     {
       "Key": "Ability_FullHeal",
