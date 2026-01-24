@@ -6,10 +6,11 @@
 );
 
 @SlotBackground = PatchStyle(TexturePath: "InputBox.png", Border: 6);
-@BarBackground  = PatchStyle(TexturePath: "ContainerDecoration.png", Border: 8);
+@BarBackground  = PatchStyle(TexturePath: "Bars/Clouds.png", Border: 8);
 
 @EmptyIcon = PatchStyle(TexturePath: "Ability_Empty.png");
 @ConfirmIcon = PatchStyle(TexturePath: "Ability_Confirm.png");
+@Cooldown = PatchStyle(TexturePath: "Cooldown.png");
 
 @Use100 = PatchStyle(TexturePath: "Slots/Bubbles/100.png", Border: 0);
 @Use90  = PatchStyle(TexturePath: "Slots/Bubbles/90.png",  Border: 0);
