@@ -3,13 +3,7 @@ package com.abilities.abilitiesplugin;
 public final class ItemIdUtil {
     private ItemIdUtil() {}
 
-    /**
-     * Normalizes:
-     * - "Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Items/U_Abilities/Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Items\\U_Abilities\\Ability_DaggerLeap" -> "Ability_DaggerLeap"
-     * - "Ability_DaggerLeap.json" -> "Ability_DaggerLeap"
-     */
+
     public static String normalizeItemId(String s) {
         if (s == null) return null;
 

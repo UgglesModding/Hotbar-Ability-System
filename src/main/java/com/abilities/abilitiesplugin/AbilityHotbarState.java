@@ -29,7 +29,6 @@ public class AbilityHotbarState {
             abilityBarUiPath = null;
 
             for (int i = 0; i < 9; i++) {
-                hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
                 hotbarRootInteractions[i] = null;
 
                 hotbarAbilityIds[i] = null;

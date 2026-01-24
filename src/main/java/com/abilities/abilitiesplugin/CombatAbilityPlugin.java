@@ -28,10 +28,6 @@ public class CombatAbilityPlugin extends JavaPlugin {
     @Override
     protected void setup() {
 
-        // --- Registries ---
-        AbilityRegistry abilityRegistry = new AbilityRegistry();
-        abilityRegistry.loadAllFromResources();
-
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
         CAO_AbilityApi.Init(state);
