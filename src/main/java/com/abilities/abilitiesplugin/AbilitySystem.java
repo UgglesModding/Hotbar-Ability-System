@@ -53,7 +53,6 @@ public class AbilitySystem {
                 WeaponAbilitySlot slot = slots.get(i);
 
                 String Key = (slot == null) ? null : slot.Key;
-                if (Key == null || Key.isBlank()) Key = AbilityRegistry.EMPTY_ITEM_ID;
 
                 s.hotbarItemIds[i] = Key;
 
@@ -78,7 +77,6 @@ public class AbilitySystem {
                 }
 
             } else {
-                s.hotbarItemIds[i] = AbilityRegistry.EMPTY_ITEM_ID;
                 s.hotbarRootInteractions[i] = null;
 
                 s.hotbarAbilityIds[i] = null;
