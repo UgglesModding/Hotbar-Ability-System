@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 import java.util.List;
 

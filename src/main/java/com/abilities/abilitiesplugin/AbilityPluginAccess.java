@@ -1,13 +1,13 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
-public final class ExamplePluginAccess {
+public final class AbilityPluginAccess {
 
     // Set once during plugin setup
     static AbilityHotbarState StateRef;
 
-    private ExamplePluginAccess() {}
+    private AbilityPluginAccess() {}
 
 
     public static void Init(AbilityHotbarState state) {

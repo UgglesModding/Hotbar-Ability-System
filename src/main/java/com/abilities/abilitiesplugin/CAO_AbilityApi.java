@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;

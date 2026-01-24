@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 public class WeaponAbilitySlot {
     public String Key;          // Ability_DaggerLeap

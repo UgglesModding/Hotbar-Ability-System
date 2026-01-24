@@ -1,4 +1,4 @@
-package com.example.exampleplugin;
+package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
