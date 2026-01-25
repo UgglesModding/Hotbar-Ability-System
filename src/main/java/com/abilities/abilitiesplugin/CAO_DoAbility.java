@@ -1,7 +1,21 @@
 package com.abilities.abilitiesplugin;
 
+import com.hypixel.hytale.builtin.hytalegenerator.fields.FastNoiseLite;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.protocol.Position;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.commands.debug.server.ServerCommand;
 import com.hypixel.hytale.server.core.command.system.CommandManager;
+import com.hypixel.hytale.server.core.console.ConsoleSender;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
+import com.hypixel.hytale.server.core.modules.entitystats.*;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.*;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
+import org.jline.console.CommandInput;
 
 import java.util.Random;
 
@@ -46,31 +60,42 @@ public class CAO_DoAbility implements IAbilityPlugin {
     // Ability functions (one per case)
     // ----------------------------
 
-    private boolean abilityRandomTeleport(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, Data.ID)) {
-            //Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
+    private boolean abilityRandomTeleport(PackagedAbilityData data, AbilityContext Context) {
+        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
             return true;
         }
-        // Spend only when we actually cast
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("[CAO] Out of uses: " + Data.ID));
-            return true;
-        }
-        float FullPower = Data.PowerMultiplier;
 
-        float dx = (rng.nextFloat() * 2f - 1f) * FullPower;
-        float dy = (rng.nextFloat() * 2f - 1f) * FullPower;
-        float dz = (rng.nextFloat() * 2f - 1f) * FullPower;
+        double fullPower = data.PowerMultiplier;
 
-        String cmd = "tp ~" + dx + " ~" + dy + " ~" + dz;
+        // random in [-fullPower, +fullPower]
+        double dx = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
+        double dy = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
+        double dz = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
 
-        CommandManager.get().handleCommand(Context.playerRef, cmd);
+        Context.world.execute(() -> {
+            TransformComponent transform =
+                    Context.store.getComponent(Context.entityRef, TransformComponent.getComponentType());
+            if (transform == null) return;
+
+            Vector3d curPos = transform.getPosition();
+            Vector3d targetPos = curPos.add(new Vector3d(dx, dy, dz));
+
+            Teleport teleport = Teleport.createForPlayer(
+                    Context.world,
+                    targetPos,
+                    new Vector3f(0, 0, 0)
+            );
+
+            Context.store.addComponent(Context.entityRef, Teleport.getComponentType(), teleport);
+        });
+
         return true;
     }
 
+
     private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
         if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
-            Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
+            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
         Context.playerRef.sendMessage(Message.raw("Trolololololol"));
@@ -106,13 +131,21 @@ public class CAO_DoAbility implements IAbilityPlugin {
         }
 
         boolean heads = rng.nextBoolean();
+        EntityStatMap EntityStatMapComponent = Context.store.getComponent(Context.entityRef, EntityStatMap.getComponentType());
+
 
         if (heads) {
             Context.playerRef.sendMessage(Message.raw("Lucky!"));
-            CommandManager.get().handleCommand(Context.playerRef, "heal");
+            int healthStat = DefaultEntityStatTypes.getHealth();
+            EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
+            EntityStatMapComponent.setStatValue(healthStat, healthStatValue.getMax());
+
         } else {
             Context.playerRef.sendMessage(Message.raw("Unlucky!"));
-            CommandManager.get().handleCommand(Context.playerRef, "neardeath");
+            int healthStat = DefaultEntityStatTypes.getHealth();
+            EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
+            EntityStatMapComponent.setStatValue(healthStat, 1);
+
         }
         return true;
     }
@@ -123,7 +156,11 @@ public class CAO_DoAbility implements IAbilityPlugin {
             return true;
         }
 
-        CommandManager.get().handleCommand(Context.playerRef, "heal");
+        EntityStatMap EntityStatMapComponent = Context.store.getComponent(Context.entityRef, EntityStatMap.getComponentType());
+        int healthStat = DefaultEntityStatTypes.getHealth();
+        EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
+        EntityStatMapComponent.setStatValue(healthStat, healthStatValue.getMax());
+
         return true;
     }
 
