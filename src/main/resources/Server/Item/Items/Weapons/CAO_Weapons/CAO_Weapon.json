@@ -13,7 +13,7 @@
       "Key": "Ability_Trololololol",
       "MaxUses": 30,
       "PowerMultiplier": 1.0,
-      "ID": "combat_abilities::trololol",
+      "ID": "combat_abilities:trololol",
       "Plugin": true
     },
     {

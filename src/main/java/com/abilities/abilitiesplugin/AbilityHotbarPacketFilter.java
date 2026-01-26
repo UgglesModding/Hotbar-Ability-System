@@ -52,24 +52,37 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
         for (SyncInteractionChain chain : chains.updates) {
             if (!chain.initial) continue;
 
-            // ---- Q / Ability1 ----
             if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
                 world.execute(() -> {
                     Player player = store.getComponent(ref, Player.getComponentType());
                     if (player == null) return;
 
-                    var hud = player.getHudManager();
-                    s.enabled = !s.enabled;
+                    // Always refresh first
+                    abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
 
-                    if (s.enabled) {
-                        abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
-                        hud.setCustomHud(
-                                playerRef,
-                                new AbilityHotbarHud(playerRef, state)
-                        );
+                    var s2 = state.get(playerRef.getUsername());
+
+                    // Check if this weapon actually has anything usable
+                    boolean hasAnything =
+                            (s2.hotbarAbilityIds[0] != null && !s2.hotbarAbilityIds[0].isBlank()) ||
+                                    (s2.hotbarRootInteractions[0] != null && !s2.hotbarRootInteractions[0].isBlank());
+
+                    if (!hasAnything) {
+                        playerRef.sendMessage(Message.raw("[AbilityBar] No abilities for held weapon."));
+                        // force it off
+                        s2.enabled = false;
+                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                        return;
+                    }
+
+                    // Now toggle ON/OFF
+                    s2.enabled = !s2.enabled;
+
+                    if (s2.enabled) {
+                        player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
                         playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
                     } else {
-                        hud.setCustomHud(playerRef, new EmptyHud(playerRef));
+                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
                         playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
                     }
                 });
