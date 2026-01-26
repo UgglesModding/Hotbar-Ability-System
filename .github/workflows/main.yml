@@ -29,7 +29,9 @@ jobs:
         uses: gradle/wrapper-validation-action@v2
 
       - name: Build
-        run: ./gradlew clean build --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --no-daemon
 
       # Optional: upload whatever your build outputs
       - name: Upload artifacts
