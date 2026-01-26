@@ -33,7 +33,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
             case "combat_abilities:randomteleport":
                 return abilityRandomTeleport(Data, Context);
 
-            case "combat_abilities::trololol":
+            case "combat_abilities:trololol":
                 return abilityTrololol(Data, Context);
 
             case "combat_abilities:fullreload":
