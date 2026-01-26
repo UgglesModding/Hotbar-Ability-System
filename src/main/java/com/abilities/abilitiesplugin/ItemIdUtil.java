@@ -17,6 +17,10 @@ public final class ItemIdUtil {
 
         if (s.endsWith(".json")) s = s.substring(0, s.length() - 5);
 
+        int colon = s.lastIndexOf(':');
+        if (colon >= 0) s = s.substring(colon + 1);
+
         return s;
     }
+
 }

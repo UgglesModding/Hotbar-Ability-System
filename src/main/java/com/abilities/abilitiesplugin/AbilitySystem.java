@@ -37,7 +37,7 @@ public class AbilitySystem {
             return;
         }
 
-        String heldItemId = getHeldItemId(player);
+        String heldItemId = ItemIdUtil.normalizeItemId(getHeldItemId(player));
         if (heldItemId == null || heldItemId.isBlank()) {
             s.fillAllEmpty();
             return;
