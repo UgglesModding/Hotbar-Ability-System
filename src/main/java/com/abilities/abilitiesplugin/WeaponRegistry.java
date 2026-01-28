@@ -9,7 +9,7 @@ import java.util.*;
 public class WeaponRegistry {
 
     // change if your root index path is different
-    private static final String WEAPON_INDEX_PATH = "Server/Item/Items/Weapons/CAO_Weapons/index.json";
+    private static final String WEAPON_INDEX_PATH = "Server/Item/Items/Weapons/HCA_Weapons/index.json";
 
     private final Map<String, WeaponDefinition> byItemId = new HashMap<>();
     private final Gson gson = new GsonBuilder().create();

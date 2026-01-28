@@ -1,0 +1,10 @@
+{
+  "Duration": 4,
+  "ApplicationEffects": {
+    "Particles": [
+      {
+        "SystemId": "ForgottenTemple_CenterWind"
+      }
+    ]
+  }
+}

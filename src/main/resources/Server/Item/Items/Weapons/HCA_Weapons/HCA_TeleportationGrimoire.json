@@ -1,5 +1,5 @@
 {
-  "ItemId": "CAO_Weapon",
+  "ItemId": "HCA_TeleportationGrimoire",
   "AbilityBar": "AbilityBar.ui",
   "AbilitySlots": [
     {
@@ -64,18 +64,14 @@
     }
   ],
   "Interactions": {
-    "Ability1": "OpenAbilityBar",
-    "Primary": "Longsword_Attack",
-    "Secondary": "Longsword_Block_Damage"
+    "Ability1": "OpenAbilityBar"
   },
-  "Icon": "Icons/ItemsGenerated/Weapon_Sword_Mithril.png",
-  "Model": "Items/Weapons/Longsword/Adamantite.blockymodel",
+  "Icon": "Icons/ItemsGenerated/Weapon_Spellbook_Grimoire_Purple.png",
+  "Model": "Items/Weapons/Spellbook/Grimoire.blockymodel",
   "TranslationProperties": {
-    "Name": "Test CAO Weapon"
+    "Name": "Teleportation Grimoire"
   },
-  "Categories": [
-    "Items.Weapons"
-  ],
-  "Texture": "Items/Weapons/Longsword/Adamantite_Texture.png",
-  "PlayerAnimationsId": "Longsword"
+  "Texture": "Items/Weapons/Spellbook/Grimoire_Purple_Texture.png",
+  "PlayerAnimationsId": "Necromancer_Void_Spellbook",
+  "Parent": "Weapon_Spellbook_Grimoire_Purple"
 }
