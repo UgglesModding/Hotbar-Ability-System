@@ -1,0 +1,78 @@
+{
+  "ItemId": "HCA_AncientElvenStaff",
+  "AbilityBar": "AbilityBar.ui",
+  "AbilitySlots": [
+    {
+      "Key": "Ability_Random_Teleport",
+      "MaxUses": 10,
+      "PowerMultiplier": 6.0,
+      "ID": "combat_abilities:randomteleport",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Trololololol",
+      "MaxUses": 30,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:trololol",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_FullReload",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:fullreload",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_ReloadRandom",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:reloadrandom",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_CoinFlip",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:coinflip",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_FullHeal",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:full_heal",
+      "Plugin": true
+    }
+  ],
+  "Interactions": {
+    "Ability1": "OpenAbilityBar",
+    "Primary": "Staff_Cast_Launch",
+    "Secondary": "StaffFlight"
+  },
+  "Icon": "Icons/ItemsGenerated/Weapon_Staff_Wood_Rotten.png",
+  "Model": "Items/Weapons/Staff/Bo_Wood.blockymodel",
+  "TranslationProperties": {
+    "Name": "Ancient Elven Staff"
+  },
+  "Texture": "Items/Weapons/Staff/Bo_Wood_Texture.png",
+  "Parent": "Weapon_Staff_Crystal_Flame"
+}

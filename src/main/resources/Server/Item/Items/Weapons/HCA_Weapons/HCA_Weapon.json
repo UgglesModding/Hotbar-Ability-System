@@ -1,0 +1,81 @@
+{
+  "ItemId": "HCA_Weapon",
+  "AbilityBar": "AbilityBar.ui",
+  "AbilitySlots": [
+    {
+      "Key": "Ability_Random_Teleport",
+      "MaxUses": 10,
+      "PowerMultiplier": 6.0,
+      "ID": "combat_abilities:randomteleport",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Trololololol",
+      "MaxUses": 30,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:trololol",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_FullReload",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:fullreload",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_ReloadRandom",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:reloadrandom",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_CoinFlip",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:coinflip",
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
+    },
+    {
+      "Key": "Ability_FullHeal",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:full_heal",
+      "Plugin": true
+    }
+  ],
+  "Interactions": {
+    "Ability1": "OpenAbilityBar",
+    "Primary": "Longsword_Attack",
+    "Secondary": "Longsword_Block_Damage"
+  },
+  "Icon": "Icons/ItemsGenerated/Weapon_Sword_Mithril.png",
+  "Model": "Items/Weapons/Longsword/Adamantite.blockymodel",
+  "TranslationProperties": {
+    "Name": "Test CAO Weapon"
+  },
+  "Categories": [
+    "Items.Weapons"
+  ],
+  "Texture": "Items/Weapons/Longsword/Adamantite_Texture.png",
+  "PlayerAnimationsId": "Longsword"
+}
