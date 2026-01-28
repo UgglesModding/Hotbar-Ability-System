@@ -51,6 +51,9 @@ public class CAO_DoAbility implements IAbilityPlugin {
             case "combat_abilities:full_heal":
                 return abilityFullHeal(Data, Context);
 
+            case "combat_abilities:teleportAxis":
+                return abilityTeleportAxis(Data, Context);
+
             default:
                 return false;
         }
@@ -88,6 +91,16 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
             Context.store.addComponent(Context.entityRef, Teleport.getComponentType(), teleport);
         });
+
+        return true;
+    }
+
+    private boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
+    {
+        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
+            return true;
+        } //teleports the player in desired direction
+
 
         return true;
     }
