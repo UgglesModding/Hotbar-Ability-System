@@ -1,6 +1,6 @@
 {
   "ItemId": "HCA_TeleportationGrimoire",
-  "AbilityBar": "AbilityBar.ui",
+  "AbilityBar": "HCA_TeleportAbilityBar.ui",
   "AbilitySlots": [
     {
       "Key": "Ability_Random_Teleport",
@@ -66,12 +66,12 @@
   "Interactions": {
     "Ability1": "OpenAbilityBar"
   },
-  "Icon": "Icons/ItemsGenerated/Weapon_Spellbook_Grimoire_Purple.png",
+  "Icon": "Icons/ItemsGenerated/Weapons/Weapons_Grimoire_TeleportGrimoire.png",
   "Model": "Items/Weapons/Spellbook/Grimoire.blockymodel",
   "TranslationProperties": {
     "Name": "Teleportation Grimoire"
   },
-  "Texture": "Items/Weapons/Spellbook/Grimoire_Purple_Texture.png",
+  "Texture": "Items/Weapons/Spellbook/Grimoire_Teleport_Texture.png",
   "PlayerAnimationsId": "Necromancer_Void_Spellbook",
   "Parent": "Weapon_Spellbook_Grimoire_Purple"
 }

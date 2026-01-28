@@ -1,0 +1,416 @@
+@KeyStyle = (
+  FontSize: 12,
+  RenderBold: true,
+  TextColor: #ffffff(0.9),
+  OutlineColor: #ffffff(1.0)
+);
+
+@SlotBackground = PatchStyle(TexturePath: "Input/PageSlot.png", Border: 6);
+@BarBackground  = PatchStyle(TexturePath: "Bars/GrimoireBar.png", Border: 8);
+
+@EmptyIcon   = PatchStyle(TexturePath: "Ability_Empty.png");
+@ConfirmIcon = PatchStyle(TexturePath: "Ability_Confirm.png");
+@Cooldown    = PatchStyle(TexturePath: "Cooldown.png", Border: 0);
+
+@Use100 = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use90  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use80  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use70  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use60  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use50  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use40  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use30  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use20  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use10  = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+@Use0   = PatchStyle(TexturePath: "Slots/Empty.png", Border: 0);
+
+Group #Root {
+  Anchor: (Bottom: 120, Width: 520, Height: 72);
+  LayoutMode: Center;
+
+  Group #Bar {
+    Anchor: (Width: 520, Height: 72);
+    Background: @BarBackground;
+
+    Group #SlotZero {
+      Anchor: (Left: 12, Top: 8, Width: 30, Height: 30);
+      Background: @SlotBackground;
+
+      Group #IconZero {
+        Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+        Background: @ConfirmIcon;
+      }
+
+      Label #KeyZero {
+        Text: "0";
+        Anchor: (Left: 4, Top: 2);
+        Style: @KeyStyle;
+      }
+    }
+
+    Group #Slots {
+      LayoutMode: Left;
+      Anchor: (Left: 48, Top: 20, Width: 424, Height: 40);
+
+      // ================= SLOT 1 =================
+      Group #Slot1 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar10  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar11  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar12  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar13  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar14  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar15  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar16  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar17  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar18  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar19  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar110 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon1 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/RandomTeleport.png");
+        }
+
+        // Cooldown overlay (you'll squish CD1Fill later)
+        Group #CD1 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD1Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key1 {
+          Text: "1";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap1 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 2 =================
+      Group #Slot2 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar20  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar21  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar22  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar23  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar24  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar25  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar26  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar27  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar28  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar29  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar210 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon2 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/Trolololol.png");
+        }
+
+        Group #CD2 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD2Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key2 {
+          Text: "2";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap2 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 3 =================
+      Group #Slot3 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar30  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar31  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar32  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar33  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar34  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar35  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar36  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar37  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar38  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar39  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar310 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon3 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/FullReload.png");
+        }
+
+        Group #CD3 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD3Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key3 {
+          Text: "3";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap3 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 4 =================
+      Group #Slot4 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar40  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar41  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar42  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar43  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar44  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar45  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar46  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar47  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar48  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar49  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar410 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon4 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/ReloadRandom.png");
+        }
+
+        Group #CD4 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD4Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key4 {
+          Text: "4";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap4 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 5 =================
+      Group #Slot5 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar50  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar51  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar52  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar53  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar54  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar55  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar56  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar57  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar58  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar59  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar510 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon5 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Group #CD5 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD5Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key5 {
+          Text: "5";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap5 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 6 =================
+      Group #Slot6 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar60  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar61  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar62  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar63  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar64  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar65  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar66  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar67  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar68  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar69  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar610 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon6 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Group #CD6 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD6Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key6 {
+          Text: "6";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap6 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 7 =================
+      Group #Slot7 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar70  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar71  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar72  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar73  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar74  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar75  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar76  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar77  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar78  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar79  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar710 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon7 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/CoinFlip.png");
+        }
+
+        Group #CD7 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD7Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key7 {
+          Text: "7";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap7 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 8 =================
+      Group #Slot8 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar80  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar81  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar82  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar83  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar84  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar85  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar86  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar87  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar88  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar89  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar810 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon8 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: @EmptyIcon;
+        }
+
+        Group #CD8 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD8Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key8 {
+          Text: "8";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+      Group #Gap8 { Anchor: (Width: 8, Height: 1); }
+
+      // ================= SLOT 9 =================
+      Group #Slot9 {
+        Anchor: (Width: 40, Height: 40);
+        Background: @SlotBackground;
+
+        Group #Bar90  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use0;   Visible: false; }
+        Group #Bar91  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use10;  Visible: false; }
+        Group #Bar92  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use20;  Visible: false; }
+        Group #Bar93  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use30;  Visible: false; }
+        Group #Bar94  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use40;  Visible: false; }
+        Group #Bar95  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use50;  Visible: false; }
+        Group #Bar96  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use60;  Visible: false; }
+        Group #Bar97  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use70;  Visible: false; }
+        Group #Bar98  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use80;  Visible: false; }
+        Group #Bar99  { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use90;  Visible: false; }
+        Group #Bar910 { Anchor: (Left: 0, Top: 0, Width: 40, Height: 40); Background: @Use100; Visible: false; }
+
+        Group #Icon9 {
+          Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
+          Background: PatchStyle(TexturePath:"Abilities/FullHeal.png");
+        }
+
+        Group #CD9 {
+        Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+        Visible: false;
+
+        Group #CD9Fill {
+          Anchor: (Left: 0, Top: 0, Width: 40, Height: 40);
+          Background: @Cooldown;
+        }
+      }
+
+        Label #Key9 {
+          Text: "9";
+          Anchor: (Left: 4, Top: 2);
+          Style: @KeyStyle;
+        }
+      }
+    }
+  }
+}
