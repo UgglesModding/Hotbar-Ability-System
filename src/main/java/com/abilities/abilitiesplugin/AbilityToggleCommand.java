@@ -6,8 +6,6 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
-import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -18,11 +16,6 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
-
-    private static final class EmptyHud extends CustomUIHud {
-        public EmptyHud(@Nonnull PlayerRef ref) { super(ref); }
-        @Override protected void build(@Nonnull UICommandBuilder ui) {}
-    }
 
     public AbilityToggleCommand(
             AbilityHotbarState state,
@@ -46,10 +39,11 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
             s.enabled = !s.enabled;
 
             Player player = store.getComponent(ref, Player.getComponentType());
+            if (player == null) return;
+
             var hudManager = player.getHudManager();
 
             if (s.enabled) {
-                // Load ability slots from currently held weapon
                 abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
 
                 hudManager.setCustomHud(
@@ -59,7 +53,7 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
                 ctx.sendMessage(Message.raw("Ability Bar: ON"));
             } else {
-                hudManager.setCustomHud(playerRef, new EmptyHud(playerRef));
+                AbilityBarUtil.forceOff(state, player, playerRef);
                 ctx.sendMessage(Message.raw("Ability Bar: OFF"));
             }
         });

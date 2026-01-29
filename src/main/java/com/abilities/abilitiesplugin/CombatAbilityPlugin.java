@@ -31,7 +31,6 @@ public class CombatAbilityPlugin extends JavaPlugin {
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         weaponRegistry.loadAllFromResources();
         CAO_AbilityApi.Init(state);
-        CAO_CommandApi.Init(this);
 
         AbilityInteractionExecutor interactionExecutor =
                 new AbilityInteractionExecutor();
@@ -55,7 +54,7 @@ public class CombatAbilityPlugin extends JavaPlugin {
                 new AbilityHotbarPacketFilter(state, abilitySystem)
         );
 
-        LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
+        //LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
     }
 
     @Override

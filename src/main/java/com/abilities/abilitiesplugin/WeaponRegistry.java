@@ -93,11 +93,13 @@ public class WeaponRegistry {
                 WeaponAbilitySlot slot = new WeaponAbilitySlot();
                 slot.Key = getString(sObj, "Key");
                 slot.RootInteraction = getString(sObj, "RootInteraction");
-                slot.ID = getString(sObj, "ID"); // capitalized key
+                slot.ID = getString(sObj, "ID");
                 slot.Plugin = getBooleanLenient(sObj, "Plugin");
                 slot.MaxUses = getInt(sObj, "MaxUses", 0);
                 slot.PowerMultiplier = getFloat(sObj, "PowerMultiplier", 1.0f);
-                slot.Icon = getString(sObj, "Icon");
+                slot.Icon = getString(sObj, "Icon"); //will be used in later updates
+                slot.AbilityValue = getInt(sObj, "AbilityValue", 0);
+                slot.Consume = getBooleanLenient(sObj, "Consume");
 
                 slots.add(slot);
             }

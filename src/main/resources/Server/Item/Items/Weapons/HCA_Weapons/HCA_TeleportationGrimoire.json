@@ -1,77 +1,125 @@
 {
   "ItemId": "HCA_TeleportationGrimoire",
-  "AbilityBar": "AbilityBar.ui",
+  "AbilityBar": "HCA_TeleportAbilityBar.ui",
   "AbilitySlots": [
     {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 1,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 3,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 2,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Double_Power",
+      "MaxUses": 1,
+      "PowerMultiplier": 2.0,
+      "ID": "combat_abilities:set_multiplication_power",
+      "Plugin": true,
+      "Consume": true
+    },
+    {
       "Key": "Ability_Random_Teleport",
-      "MaxUses": 10,
-      "PowerMultiplier": 6.0,
+      "MaxUses": 1000,
+      "PowerMultiplier": 4.0,
       "ID": "combat_abilities:randomteleport",
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
-      "Key": "Ability_Trololololol",
-      "MaxUses": 30,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:trololol",
-      "Plugin": true
+      "Key": "Ability_Toggle_Teleport_Local_Global",
+      "MaxUses": 1000,
+      "ID": "combat_abilities:toggle_local_global",
+      "Plugin": true,
+      "Consume": true
     },
     {
-      "Key": "Ability_FullReload",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:fullreload",
-      "Plugin": true
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -2,
+      "Plugin": true,
+      "Consume": true
     },
     {
-      "Key": "Ability_ReloadRandom",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:reloadrandom",
-      "Plugin": true
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -3,
+      "Plugin": true,
+      "Consume": true
     },
     {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_CoinFlip",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:coinflip",
-      "Plugin": true
-    },
-    {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_FullHeal",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:full_heal",
-      "Plugin": true
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -1,
+      "Plugin": true,
+      "Consume": true
     }
   ],
   "Interactions": {
-    "Ability1": "OpenAbilityBar"
+    "Ability1": "OpenAbilityBar",
+    "Primary": "Longsword_Attack",
+    "Secondary": "Skeleton_Incandescent_Footman_Spear_Spin_Swing_Right"
   },
-  "Icon": "Icons/ItemsGenerated/Weapon_Spellbook_Grimoire_Purple.png",
+  "Icon": "Icons/ItemsGenerated/Weapons/Weapons_Grimoire_TeleportGrimoire.png",
   "Model": "Items/Weapons/Spellbook/Grimoire.blockymodel",
   "TranslationProperties": {
     "Name": "Teleportation Grimoire"
   },
-  "Texture": "Items/Weapons/Spellbook/Grimoire_Purple_Texture.png",
+  "Texture": "Items/Weapons/Spellbook/Grimoire_Teleport_Texture.png",
   "PlayerAnimationsId": "Necromancer_Void_Spellbook",
-  "Parent": "Weapon_Spellbook_Grimoire_Purple"
+  "Parent": "Weapon_Spellbook_Grimoire_Purple",
+  "Recipe": {
+    "BenchRequirement": [
+      {
+        "Id": "Arcanebench",
+        "Type": "Crafting",
+        "Categories": [
+          "Arcane_Misc"
+        ]
+      }
+    ],
+    "Input": [
+      {
+        "ItemId": "Ingredient_Leather_Medium",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Fabric_Scrap_Shadoweave",
+        "Quantity": 3
+      },
+      {
+        "Quantity": 5,
+        "ItemId": "Ingredient_Crystal_Purple"
+      },
+      {
+        "Quantity": 1,
+        "ItemId": "Ingredient_Bar_Gold"
+      }
+    ]
+  }
 }

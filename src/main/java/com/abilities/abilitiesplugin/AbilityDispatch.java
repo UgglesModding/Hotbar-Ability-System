@@ -21,8 +21,8 @@ public final class AbilityDispatch {
             try {
                 if (plugin.CAO_DoAbility(data, context)) return true;
             } catch (Throwable t) {
-                if (context != null && context.playerRef != null) {
-                    context.playerRef.sendMessage(
+                if (context != null && context.PlayerRef != null) {
+                    context.PlayerRef.sendMessage(
                             Message.raw("[CAO] Ability plugin error: " + t.getClass().getSimpleName())
                     );
                 }
