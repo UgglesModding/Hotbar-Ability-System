@@ -81,7 +81,9 @@
     }
   ],
   "Interactions": {
-    "Ability1": "OpenAbilityBar"
+    "Ability1": "OpenAbilityBar",
+    "Primary": "Longsword_Attack",
+    "Secondary": "Skeleton_Incandescent_Footman_Spear_Spin_Swing_Right"
   },
   "Icon": "Icons/ItemsGenerated/Weapons/Weapons_Grimoire_TeleportGrimoire.png",
   "Model": "Items/Weapons/Spellbook/Grimoire.blockymodel",
@@ -90,5 +92,34 @@
   },
   "Texture": "Items/Weapons/Spellbook/Grimoire_Teleport_Texture.png",
   "PlayerAnimationsId": "Necromancer_Void_Spellbook",
-  "Parent": "Weapon_Spellbook_Grimoire_Purple"
+  "Parent": "Weapon_Spellbook_Grimoire_Purple",
+  "Recipe": {
+    "BenchRequirement": [
+      {
+        "Id": "Arcanebench",
+        "Type": "Crafting",
+        "Categories": [
+          "Arcane_Misc"
+        ]
+      }
+    ],
+    "Input": [
+      {
+        "ItemId": "Ingredient_Leather_Medium",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Fabric_Scrap_Shadoweave",
+        "Quantity": 3
+      },
+      {
+        "Quantity": 5,
+        "ItemId": "Ingredient_Crystal_Purple"
+      },
+      {
+        "Quantity": 1,
+        "ItemId": "Ingredient_Bar_Gold"
+      }
+    ]
+  }
 }
