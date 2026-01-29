@@ -8,6 +8,7 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": 1,
+      "Consume": true,
       "Plugin": true
     },
     {
@@ -16,6 +17,7 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": 3,
+      "Consume": true,
       "Plugin": true
     },
     {
@@ -24,6 +26,7 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": 2,
+      "Consume": true,
       "Plugin": true
     },
     {
@@ -31,20 +34,23 @@
       "MaxUses": 1,
       "PowerMultiplier": 2.0,
       "ID": "combat_abilities:set_multiplication_power",
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
       "Key": "Ability_Random_Teleport",
       "MaxUses": 1000,
       "PowerMultiplier": 4.0,
       "ID": "combat_abilities:randomteleport",
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
       "Key": "Ability_Toggle_Teleport_Local_Global",
       "MaxUses": 1000,
       "ID": "combat_abilities:toggle_local_global",
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
       "Key": "Teleport_Axis",
@@ -52,7 +58,8 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": -2,
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
       "Key": "Teleport_Axis",
@@ -60,7 +67,8 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": -3,
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     },
     {
       "Key": "Teleport_Axis",
@@ -68,7 +76,8 @@
       "PowerMultiplier": 3.0,
       "ID": "combat_abilities:teleport_axis",
       "AbilityValue": -1,
-      "Plugin": true
+      "Plugin": true,
+      "Consume": true
     }
   ],
   "Interactions": {

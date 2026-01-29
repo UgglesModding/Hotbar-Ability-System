@@ -3,6 +3,11 @@ package com.abilities.abilitiesplugin;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.transaction.ItemStackSlotTransaction;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -321,5 +326,42 @@ public final class CAO_AbilityApi {
         return s.hotbarStringFlags[idx].remove(value);
     }
 
+    public final class ChargeConsumption {
+
+        private ChargeConsumption() {}
+
+        public static boolean consumeChargeInHand(Player player, String itemId, int amount) {
+            if (player == null || itemId == null || itemId.isBlank() || amount <= 0) return false;
+
+            Inventory inv = player.getInventory();
+            ItemStack inHand = inv.getItemInHand();
+            if (inHand == null || inHand.isEmpty()) return false;
+
+            if (!itemId.equals(inHand.getItemId())) return false;
+
+            int qty = inHand.getQuantity();
+            if (qty < amount) return false;
+
+            int newQty = qty - amount;
+
+            if (inv.usingToolsItem()) {
+                ItemContainer tools = inv.getTools();
+                short slot = (short) inv.getActiveToolsSlot();
+                ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
+                if (replacement == null) replacement = ItemStack.EMPTY;
+
+                ItemStackSlotTransaction tx = tools.setItemStackForSlot(slot, replacement);
+                return tx != null && tx.succeeded();
+            } else {
+                ItemContainer hotbar = inv.getHotbar();
+                short slot = (short) inv.getActiveHotbarSlot();
+                ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
+                if (replacement == null) replacement = ItemStack.EMPTY;
+
+                ItemStackSlotTransaction tx = hotbar.setItemStackForSlot(slot, replacement);
+                return tx != null && tx.succeeded();
+            }
+        }
+    }
 
 }

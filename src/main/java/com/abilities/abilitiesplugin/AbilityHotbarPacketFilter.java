@@ -68,7 +68,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                                     (s2.hotbarRootInteractions[0] != null && !s2.hotbarRootInteractions[0].isBlank());
 
                     if (!hasAnything) {
-                        playerRef.sendMessage(Message.raw("[AbilityBar] No abilities for held weapon."));
+                        //playerRef.sendMessage(Message.raw("[AbilityBar] No abilities for held weapon."));
                         // force it off
                         s2.enabled = false;
                         player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
@@ -80,10 +80,10 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
                     if (s2.enabled) {
                         player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
-                        playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
+                        //playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
                     } else {
                         player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
+                        //playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
                     }
                 });
 

@@ -19,6 +19,7 @@ public class AbilityHotbarState {
 
         public final String[] hotbarAbilityIds = new String[9];
         public final boolean[] hotbarPluginFlags = new boolean[9];
+        public final boolean[] hotbarConsumeFlags = new boolean[9];
 
         public final int[] hotbarMaxUses = new int[9];
         public final float[] hotbarPowerMultipliers = new float[9];
@@ -39,6 +40,7 @@ public class AbilityHotbarState {
 
                 hotbarAbilityIds[i] = null;
                 hotbarPluginFlags[i] = false;
+                hotbarConsumeFlags[i] = false;
 
                 hotbarMaxUses[i] = 0;
                 hotbarPowerMultipliers[i] = 1.0f;

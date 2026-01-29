@@ -61,6 +61,7 @@ public class AbilitySystem {
 
                 s.hotbarMaxUses[i] = (slot == null) ? 0 : slot.MaxUses;
                 s.hotbarAbilityValues[i] = (slot == null) ? 0 : slot.AbilityValue;
+                s.hotbarConsumeFlags[i] = slot != null && slot.Consume;
 
                 //non default 0 multiplier
                 float power = 1.0f;
@@ -97,18 +98,6 @@ public class AbilitySystem {
         }
 
         s.selectedAbilitySlot = 1;
-
-        playerRef.sendMessage(Message.raw(
-                "[AbilityBar] Loaded held=" + heldItemId +
-                        " ui=" + (s.abilityBarUiPath == null ? "AbilityBar.ui" : s.abilityBarUiPath) +
-                        " slot1Key=" + s.hotbarItemIds[0] +
-                        " slot1Id=" + s.hotbarAbilityIds[0] +
-                        " slot1Plugin=" + s.hotbarPluginFlags[0] +
-                        " slot1MaxUses=" + s.hotbarMaxUses[0] +
-                        " slot1Power=" + s.hotbarPowerMultipliers[0] +
-                        " slot1Value=" + s.hotbarAbilityValues[0] +
-                        " slot1Root=" + s.hotbarRootInteractions[0]
-        ));
     }
 
     public void useSlot(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> ref, World world, int slot1to9) {
@@ -119,8 +108,11 @@ public class AbilitySystem {
         s.selectedAbilitySlot = slot1to9;
 
         boolean plugin = s.hotbarPluginFlags[slot0to8];
+        boolean consume = s.hotbarPluginFlags[slot0to8]; //for consuming charges
+
         String id = s.hotbarAbilityIds[slot0to8];
         String rootInteraction = s.hotbarRootInteractions[slot0to8];
+
 
         if (plugin) {
             if (id == null || id.isBlank()) {
@@ -142,7 +134,8 @@ public class AbilitySystem {
                     powerMultiplier,
                     abilityValue,
                     rootInteraction,
-                    remainingUses
+                    remainingUses,
+                    consume
             );
 
             world.execute(() -> {

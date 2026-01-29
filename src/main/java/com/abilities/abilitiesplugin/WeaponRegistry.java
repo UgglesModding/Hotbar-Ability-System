@@ -99,6 +99,7 @@ public class WeaponRegistry {
                 slot.PowerMultiplier = getFloat(sObj, "PowerMultiplier", 1.0f);
                 slot.Icon = getString(sObj, "Icon"); //will be used in later updates
                 slot.AbilityValue = getInt(sObj, "AbilityValue", 0);
+                slot.Consume = getBooleanLenient(sObj, "Consume");
 
                 slots.add(slot);
             }

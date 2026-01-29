@@ -160,6 +160,8 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityLocalTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
+        //Context.PlayerRef.sendMessage(Message.raw("Local TP"));
+
         if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
@@ -188,25 +190,22 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Vector3d curPos = transform.getPosition();
             Vector3f rot = transform.getRotation();
 
-            double pitch = Math.toRadians(rot.x);
-            double yaw   = Math.toRadians(rot.y);
+            double yaw = Math.toRadians(rot.z); //no yaw yet
+
 
             Vector3d forward = new Vector3d(
-                    -Math.sin(yaw) * Math.cos(pitch),
-                    -Math.sin(pitch),
-                    Math.cos(yaw) * Math.cos(pitch)
+                    -Math.sin(yaw),
+                    0.0,
+                    Math.cos(yaw)
+            );
+
+            Vector3d right = new Vector3d(
+                    Math.cos(yaw),
+                    0.0,
+                    Math.sin(yaw)
             );
 
             Vector3d up = new Vector3d(0, 1, 0);
-
-            Vector3d right = new Vector3d(
-                    forward.y * up.z - forward.z * up.y,
-                    forward.z * up.x - forward.x * up.z,
-                    forward.x * up.y - forward.y * up.x
-            );
-
-            forward = normalizeSafe(forward);
-            right   = normalizeSafe(right);
 
             Vector3d offset;
 
@@ -214,7 +213,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
                 case 1: // LEFT / RIGHT
                     offset = new Vector3d(
                             right.x * (-dir * amount),
-                            right.y * (-dir * amount),
+                            0.0,
                             right.z * (-dir * amount)
                     );
                     break;
@@ -222,16 +221,16 @@ public class CAO_DoAbility implements IAbilityPlugin {
                 case 3: // FORWARD / BACKWARD
                     offset = new Vector3d(
                             forward.x * (dir * amount),
-                            forward.y * (dir * amount),
+                            0.0,
                             forward.z * (dir * amount)
                     );
                     break;
 
                 case 2: // UP / DOWN
                     offset = new Vector3d(
-                            up.x * (dir * amount),
-                            up.y * (dir * amount),
-                            up.z * (dir * amount)
+                            0.0,
+                            (dir * amount),
+                            0.0
                     );
                     break;
 
@@ -252,6 +251,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
         return true;
     }
+
 
 
     private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
@@ -345,24 +345,27 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityToggleLocalGlobal(PackagedAbilityData data, AbilityContext Context)
     {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            return true;
-        }
-
-        final String teleportAxisId = "combat_abilities:teleport_axis";
-
-        if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
-        {
-            Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
-            CAO_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-        }
-        else
-        {
-            Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
-            CAO_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-        }
-
+        Context.PlayerRef.sendMessage(Message.raw("Ability temporarily disabled, sorry"));
         return true;
+
+        //if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        //    return true;
+        //}
+
+       // final String teleportAxisId = "combat_abilities:teleport_axis";
+
+        //if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
+       // {
+        //    Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
+        //    CAO_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+        //}
+        //else
+        //{
+          //  Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
+         //   CAO_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+       // }
+
+       // return true;
     }
 
 

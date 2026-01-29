@@ -9,4 +9,5 @@ public class WeaponAbilitySlot {
     public float PowerMultiplier;
     public String Icon;
     public int AbilityValue;
+    public boolean Consume;
 }
