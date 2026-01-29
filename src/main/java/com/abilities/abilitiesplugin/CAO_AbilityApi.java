@@ -4,14 +4,17 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.transaction.ItemStackSlotTransaction;
+import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Random;
 
@@ -28,10 +31,7 @@ public final class CAO_AbilityApi {
     }
 
     public static boolean SpendUse(PlayerRef playerRef, String AbilityID) {
-        if (state == null) {
-            //playerRef.sendMessage(Message.raw("[CAO] SpendUse failed: API not initialized"));
-            return false;
-        }
+        if (state == null) return false;
 
         int idx = FindSlotIndexByID(playerRef, AbilityID);
         if (idx < 0) return false;
@@ -48,12 +48,8 @@ public final class CAO_AbilityApi {
         return true;
     }
 
-    //Set remaining uses for the first hotbar slot matching AbilityID.
     public static boolean SetUses(PlayerRef playerRef, String AbilityID, int NewRemaining) {
-        if (state == null) {
-            //playerRef.sendMessage(Message.raw("[CAO] SetUses failed: API not initialized"));
-            return false;
-        }
+        if (state == null) return false;
         if (AbilityID == null || AbilityID.isBlank()) return false;
 
         var s = state.get(playerRef.getUsername());
@@ -69,7 +65,6 @@ public final class CAO_AbilityApi {
                 if (NewRemaining < 0) NewRemaining = 0;
                 if (NewRemaining > max) NewRemaining = max;
             } else {
-                // unlimited: setting doesn't really matter, but keep it non-negative
                 if (NewRemaining < 0) NewRemaining = 0;
             }
 
@@ -91,7 +86,6 @@ public final class CAO_AbilityApi {
             if (!id.equalsIgnoreCase(AbilityID)) continue;
 
             int max = s.hotbarMaxUses[i];
-
             if (max <= 0) return true; // unlimited
 
             int cur = s.hotbarRemainingUses[i];
@@ -119,10 +113,9 @@ public final class CAO_AbilityApi {
         return -1;
     }
 
-    //True if ability is usable right now (unlimited OR RemainingUses > 0).
-
     public static boolean HasUsesLeft(PlayerRef playerRef, String AbilityID) {
         if (state == null) return false;
+
         int idx = FindSlotIndexByID(playerRef, AbilityID);
         if (idx < 0) return false;
 
@@ -133,7 +126,6 @@ public final class CAO_AbilityApi {
 
         return s.hotbarRemainingUses[idx] > 0;
     }
-
 
     public static boolean AddUseToRandomAbility(PlayerRef playerRef, String ExcludeID) {
         if (state == null) return false;
@@ -149,10 +141,10 @@ public final class CAO_AbilityApi {
             if (ExcludeID != null && id.equalsIgnoreCase(ExcludeID)) continue;
 
             int max = s.hotbarMaxUses[i];
-            if (max <= 0) continue; // unlimited => doesn't need charges
+            if (max <= 0) continue;
 
             int remaining = s.hotbarRemainingUses[i];
-            if (remaining >= max) continue; // already full
+            if (remaining >= max) continue;
 
             candidates[count++] = i;
         }
@@ -163,11 +155,6 @@ public final class CAO_AbilityApi {
         s.hotbarRemainingUses[pick] = s.hotbarRemainingUses[pick] + 1;
         return true;
     }
-
-    // =========================================================
-    // NEW: Slot-based setter + refill abilities
-    // =========================================================
-
 
     public static boolean SetUsesBySlot(PlayerRef playerRef, int slot1to9, int newRemaining) {
         if (state == null) {
@@ -189,7 +176,6 @@ public final class CAO_AbilityApi {
             return true;
         }
 
-        // max <= 0 => unlimited; nothing to "refill", but allow non-negative assignment anyway
         if (newRemaining < 0) newRemaining = 0;
         s.hotbarRemainingUses[idx] = newRemaining;
         return true;
@@ -207,10 +193,10 @@ public final class CAO_AbilityApi {
             if (excludeID != null && id.equalsIgnoreCase(excludeID)) continue;
 
             int max = s.hotbarMaxUses[i];
-            if (max <= 0) continue; // unlimited => ignore
+            if (max <= 0) continue;
 
             int remaining = s.hotbarRemainingUses[i];
-            if (remaining >= max) continue; // already full
+            if (remaining >= max) continue;
 
             s.hotbarRemainingUses[i] = max;
             changed = true;
@@ -248,8 +234,6 @@ public final class CAO_AbilityApi {
         return true;
     }
 
-    //Placeholder: keep the door open for real RootInteraction execution later.
-
     public static boolean DoRootInteraction(
             PlayerRef playerRef,
             Store<EntityStore> store,
@@ -258,8 +242,6 @@ public final class CAO_AbilityApi {
             String RootInteraction
     ) {
         if (RootInteraction == null || RootInteraction.isBlank()) return false;
-
-        //playerRef.sendMessage(Message.raw("[CAO] DoRootInteraction placeholder: " + RootInteraction));
         return false;
     }
 
@@ -326,42 +308,86 @@ public final class CAO_AbilityApi {
         return s.hotbarStringFlags[idx].remove(value);
     }
 
-    public final class ChargeConsumption {
+    // =========================================================
+    // Ability bar OFF helper (no extra files)
+    // =========================================================
 
-        private ChargeConsumption() {}
+    private static final class EmptyHud extends CustomUIHud {
+        public EmptyHud(@Nonnull PlayerRef ref) {
+            super(ref);
+        }
 
-        public static boolean consumeChargeInHand(Player player, String itemId, int amount) {
-            if (player == null || itemId == null || itemId.isBlank() || amount <= 0) return false;
-
-            Inventory inv = player.getInventory();
-            ItemStack inHand = inv.getItemInHand();
-            if (inHand == null || inHand.isEmpty()) return false;
-
-            if (!itemId.equals(inHand.getItemId())) return false;
-
-            int qty = inHand.getQuantity();
-            if (qty < amount) return false;
-
-            int newQty = qty - amount;
-
-            if (inv.usingToolsItem()) {
-                ItemContainer tools = inv.getTools();
-                short slot = (short) inv.getActiveToolsSlot();
-                ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
-                if (replacement == null) replacement = ItemStack.EMPTY;
-
-                ItemStackSlotTransaction tx = tools.setItemStackForSlot(slot, replacement);
-                return tx != null && tx.succeeded();
-            } else {
-                ItemContainer hotbar = inv.getHotbar();
-                short slot = (short) inv.getActiveHotbarSlot();
-                ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
-                if (replacement == null) replacement = ItemStack.EMPTY;
-
-                ItemStackSlotTransaction tx = hotbar.setItemStackForSlot(slot, replacement);
-                return tx != null && tx.succeeded();
-            }
+        @Override
+        protected void build(@Nonnull UICommandBuilder ui) {
         }
     }
 
+    public static void TurnOffAbilityBar(Player player, PlayerRef playerRef) {
+        if (player == null || playerRef == null) return;
+
+        if (state != null) {
+            var s = state.get(playerRef.getUsername());
+            if (s != null) s.enabled = false;
+        }
+
+        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+    }
+
+    public static boolean ConsumeChargeInHand(AbilityContext context, int amount) {
+        if (context == null) return false;
+        if (context.Player == null || context.PlayerRef == null) return false;
+
+        // If API isn't initialized, do nothing (don't break abilities)
+        if (state == null) return true;
+
+        var s = state.get(context.PlayerRef.getUsername());
+        if (s == null) return true;
+
+        int slot1to9 = s.selectedAbilitySlot;
+        if (slot1to9 < 1 || slot1to9 > 9) {
+            // If we don't know the slot, don't consume.
+            return true;
+        }
+
+        int slot0to8 = slot1to9 - 1;
+
+        // Only consume if this slot has Consume=true
+        if (!s.hotbarConsumeFlags[slot0to8]) {
+            return true;
+        }
+
+        Inventory inv = context.Player.getInventory();
+        ItemStack inHand = inv.getItemInHand();
+        if (inHand == null || inHand.isEmpty()) return false;
+
+        int qty = inHand.getQuantity();
+        if (qty < amount) return false;
+
+        int newQty = qty - amount;
+
+        // If we're about to hit 0, and the bar is open, turn it off first
+        if (newQty <= 0 && s.enabled) {
+            TurnOffAbilityBar(context.Player, context.PlayerRef);
+        }
+
+        if (inv.usingToolsItem()) {
+            ItemContainer tools = inv.getTools();
+            short slot = (short) inv.getActiveToolsSlot();
+
+            ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
+            if (replacement == null) replacement = ItemStack.EMPTY;
+
+            ItemStackSlotTransaction tx = tools.setItemStackForSlot(slot, replacement);
+            return tx != null && tx.succeeded();
+        } else {
+            ItemContainer hotbar = inv.getHotbar();
+            short slot = (short) inv.getActiveHotbarSlot();
+
+            ItemStack replacement = (newQty <= 0) ? ItemStack.EMPTY : inHand.withQuantity(newQty);
+            if (replacement == null) replacement = ItemStack.EMPTY;
+
+            ItemStackSlotTransaction tx = hotbar.setItemStackForSlot(slot, replacement);
+            return tx != null && tx.succeeded();
+        }
+    }
 }

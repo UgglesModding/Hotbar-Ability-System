@@ -2,7 +2,6 @@ package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
@@ -10,6 +9,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AbilitySystem {
@@ -44,15 +44,14 @@ public class AbilitySystem {
         }
 
         List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
-
         s.abilityBarUiPath = weaponRegistry.getAbilityBarPath(heldItemId);
 
         for (int i = 0; i < 9; i++) {
             if (slots != null && i < slots.size()) {
                 WeaponAbilitySlot slot = slots.get(i);
 
-                String Key = (slot == null) ? null : slot.Key;
-                s.hotbarItemIds[i] = Key;
+                String key = (slot == null) ? null : slot.Key;
+                s.hotbarItemIds[i] = key;
 
                 s.hotbarRootInteractions[i] = (slot == null) ? null : slot.RootInteraction;
 
@@ -61,18 +60,14 @@ public class AbilitySystem {
 
                 s.hotbarMaxUses[i] = (slot == null) ? 0 : slot.MaxUses;
                 s.hotbarAbilityValues[i] = (slot == null) ? 0 : slot.AbilityValue;
+
+                // Automatically false
                 s.hotbarConsumeFlags[i] = slot != null && slot.Consume;
 
-                //non default 0 multiplier
                 float power = 1.0f;
-
-                if (slot != null) {
-                    if (slot.PowerMultiplier > 0.0f) {
-                        power = slot.PowerMultiplier;
-                    }
+                if (slot != null && slot.PowerMultiplier > 0.0f) {
+                    power = slot.PowerMultiplier;
                 }
-
-
                 s.hotbarPowerMultipliers[i] = power;
 
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
@@ -83,7 +78,13 @@ public class AbilitySystem {
                     s.hotbarRemainingUses[i] = 0;
                 }
 
+                if (s.hotbarStringFlags[i] == null) {
+                    s.hotbarStringFlags[i] = new ArrayList<>();
+                }
+
             } else {
+                // Clear everything so no stale values carry over
+                s.hotbarItemIds[i] = null;
                 s.hotbarRootInteractions[i] = null;
 
                 s.hotbarAbilityIds[i] = null;
@@ -94,6 +95,11 @@ public class AbilitySystem {
                 s.hotbarIcons[i] = null;
                 s.hotbarRemainingUses[i] = 0;
                 s.hotbarAbilityValues[i] = 0;
+
+                // IMPORTANT: clear consume too
+                s.hotbarConsumeFlags[i] = false;
+
+                s.hotbarStringFlags[i] = new ArrayList<>();
             }
         }
 
@@ -108,15 +114,14 @@ public class AbilitySystem {
         s.selectedAbilitySlot = slot1to9;
 
         boolean plugin = s.hotbarPluginFlags[slot0to8];
-        boolean consume = s.hotbarPluginFlags[slot0to8]; //for consuming charges
+
+        boolean consume = s.hotbarConsumeFlags[slot0to8];
 
         String id = s.hotbarAbilityIds[slot0to8];
         String rootInteraction = s.hotbarRootInteractions[slot0to8];
 
-
         if (plugin) {
             if (id == null || id.isBlank()) {
-                //playerRef.sendMessage(Message.raw("[Ability] Plugin=true but ID missing."));
                 return;
             }
 
@@ -148,10 +153,8 @@ public class AbilitySystem {
                         abilityValue
                 );
 
-
                 boolean handled = AbilityDispatch.dispatch(data, ctx);
                 if (!handled) {
-                    //playerRef.sendMessage(Message.raw("[Ability] No plugin handled ID=" + id));
                     return;
                 }
 
@@ -171,7 +174,7 @@ public class AbilitySystem {
         world.execute(() -> {
             boolean ok = interactionExecutor.execute(rootInteraction, playerRef, store, ref, world);
             if (!ok) {
-                //playerRef.sendMessage(Message.raw("[Ability] No handler registered for RootInteraction: " + rootInteraction));
+                return;
             }
 
             Player player = store.getComponent(ref, Player.getComponentType());

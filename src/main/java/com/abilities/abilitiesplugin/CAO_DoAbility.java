@@ -92,6 +92,8 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+
         return true;
     }
 
@@ -155,6 +157,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -249,6 +252,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -260,6 +264,8 @@ public class CAO_DoAbility implements IAbilityPlugin {
             return true;
         }
         Context.PlayerRef.sendMessage(Message.raw("Trolololololol"));
+
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -272,6 +278,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
         CAO_AbilityApi.UpdateHud(Context);
 
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -282,7 +289,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
         boolean didRefill = CAO_AbilityApi.RefillRandomAbilityWithUses(Context.PlayerRef, data.ID);
 
         CAO_AbilityApi.UpdateHud(Context);
-
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -308,6 +315,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
             EntityStatMapComponent.setStatValue(healthStat, 1);
 
         }
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -340,6 +348,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
         float fullPower = data.PowerMultiplier * Context.PowerMultiplier;
         CAO_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
 
+        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
