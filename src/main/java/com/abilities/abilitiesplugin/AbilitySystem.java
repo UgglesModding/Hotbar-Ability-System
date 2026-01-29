@@ -45,7 +45,6 @@ public class AbilitySystem {
 
         List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
 
-        // Which UI file should be appended when opening the bar for this weapon
         s.abilityBarUiPath = weaponRegistry.getAbilityBarPath(heldItemId);
 
         for (int i = 0; i < 9; i++) {
@@ -53,26 +52,33 @@ public class AbilitySystem {
                 WeaponAbilitySlot slot = slots.get(i);
 
                 String Key = (slot == null) ? null : slot.Key;
-
                 s.hotbarItemIds[i] = Key;
 
-                // KEEP: RootInteraction stored for the future system
                 s.hotbarRootInteractions[i] = (slot == null) ? null : slot.RootInteraction;
 
-                // Plugin system fields
                 s.hotbarAbilityIds[i] = (slot == null) ? null : slot.ID;
                 s.hotbarPluginFlags[i] = slot != null && slot.Plugin;
 
-                // store the rest of the JSON-defined fields
                 s.hotbarMaxUses[i] = (slot == null) ? 0 : slot.MaxUses;
-                s.hotbarPowerMultipliers[i] = (slot == null) ? 1.0f : slot.PowerMultiplier;
+                s.hotbarAbilityValues[i] = (slot == null) ? 0 : slot.AbilityValue;
+
+                //non default 0 multiplier
+                float power = 1.0f;
+
+                if (slot != null) {
+                    if (slot.PowerMultiplier > 0.0f) {
+                        power = slot.PowerMultiplier;
+                    }
+                }
+
+
+                s.hotbarPowerMultipliers[i] = power;
+
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
 
-                // Runtime uses reset when weapon refreshes
                 if (s.hotbarMaxUses[i] > 0) {
                     s.hotbarRemainingUses[i] = s.hotbarMaxUses[i];
                 } else {
-                    // MaxUses <= 0 => treat as unlimited (RemainingUses not used)
                     s.hotbarRemainingUses[i] = 0;
                 }
 
@@ -86,6 +92,7 @@ public class AbilitySystem {
                 s.hotbarPowerMultipliers[i] = 1.0f;
                 s.hotbarIcons[i] = null;
                 s.hotbarRemainingUses[i] = 0;
+                s.hotbarAbilityValues[i] = 0;
             }
         }
 
@@ -99,6 +106,7 @@ public class AbilitySystem {
                         " slot1Plugin=" + s.hotbarPluginFlags[0] +
                         " slot1MaxUses=" + s.hotbarMaxUses[0] +
                         " slot1Power=" + s.hotbarPowerMultipliers[0] +
+                        " slot1Value=" + s.hotbarAbilityValues[0] +
                         " slot1Root=" + s.hotbarRootInteractions[0]
         ));
     }
@@ -114,10 +122,9 @@ public class AbilitySystem {
         String id = s.hotbarAbilityIds[slot0to8];
         String rootInteraction = s.hotbarRootInteractions[slot0to8];
 
-        // Plugin abilities
         if (plugin) {
             if (id == null || id.isBlank()) {
-                playerRef.sendMessage(Message.raw("[Ability] Plugin=true but ID missing."));
+                //playerRef.sendMessage(Message.raw("[Ability] Plugin=true but ID missing."));
                 return;
             }
 
@@ -125,6 +132,7 @@ public class AbilitySystem {
             int maxUses = s.hotbarMaxUses[slot0to8];
             int remainingUses = s.hotbarRemainingUses[slot0to8];
             float powerMultiplier = s.hotbarPowerMultipliers[slot0to8];
+            int abilityValue = s.hotbarAbilityValues[slot0to8];
 
             PackagedAbilityData data = new PackagedAbilityData(
                     slot0to8,
@@ -132,23 +140,32 @@ public class AbilitySystem {
                     id,
                     maxUses,
                     powerMultiplier,
+                    abilityValue,
                     rootInteraction,
                     remainingUses
             );
 
             world.execute(() -> {
-                AbilityContext ctx = AbilityContext.from(playerRef, store, ref, world);
+                AbilityContext ctx = AbilityContext.from(
+                        playerRef,
+                        store,
+                        ref,
+                        world,
+                        state,
+                        abilityValue
+                );
+
 
                 boolean handled = AbilityDispatch.dispatch(data, ctx);
                 if (!handled) {
-                    playerRef.sendMessage(Message.raw("[Ability] No plugin handled ID=" + id));
+                    //playerRef.sendMessage(Message.raw("[Ability] No plugin handled ID=" + id));
                     return;
                 }
 
-                if (s.enabled && ctx.player != null) {
-                    ctx.player.getHudManager().setCustomHud(
-                            ctx.playerRef,
-                            new AbilityHotbarHud(ctx.playerRef, state)
+                if (s.enabled && ctx.Player != null) {
+                    ctx.Player.getHudManager().setCustomHud(
+                            ctx.PlayerRef,
+                            new AbilityHotbarHud(ctx.PlayerRef, state)
                     );
                 }
             });
@@ -156,16 +173,14 @@ public class AbilitySystem {
             return;
         }
 
-        // Non-plugin interaction path
         if (rootInteraction == null || rootInteraction.isBlank()) return;
 
         world.execute(() -> {
             boolean ok = interactionExecutor.execute(rootInteraction, playerRef, store, ref, world);
             if (!ok) {
-                playerRef.sendMessage(Message.raw("[Ability] No handler registered for RootInteraction: " + rootInteraction));
+                //playerRef.sendMessage(Message.raw("[Ability] No handler registered for RootInteraction: " + rootInteraction));
             }
 
-            // Also rebuild for non-plugin if needed (optional, but consistent)
             Player player = store.getComponent(ref, Player.getComponentType());
             if (s.enabled && player != null) {
                 player.getHudManager().setCustomHud(
@@ -175,7 +190,6 @@ public class AbilitySystem {
             }
         });
     }
-
 
     private static String getHeldItemId(Player player) {
         ItemContainer hotbar = player.getInventory().getHotbar();

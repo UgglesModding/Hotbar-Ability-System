@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.List;
 import java.util.Random;
 
 public final class CAO_AbilityApi {
@@ -17,16 +18,13 @@ public final class CAO_AbilityApi {
     private CAO_AbilityApi() {
     }
 
-    /**
-     * Call this once in ExamplePlugin.setup() after you create your AbilityHotbarState.
-     */
     public static void Init(AbilityHotbarState State) {
         state = State;
     }
 
     public static boolean SpendUse(PlayerRef playerRef, String AbilityID) {
         if (state == null) {
-            playerRef.sendMessage(Message.raw("[CAO] SpendUse failed: API not initialized"));
+            //playerRef.sendMessage(Message.raw("[CAO] SpendUse failed: API not initialized"));
             return false;
         }
 
@@ -45,12 +43,10 @@ public final class CAO_AbilityApi {
         return true;
     }
 
-    /**
-     * Set remaining uses for the first hotbar slot matching AbilityID.
-     */
+    //Set remaining uses for the first hotbar slot matching AbilityID.
     public static boolean SetUses(PlayerRef playerRef, String AbilityID, int NewRemaining) {
         if (state == null) {
-            playerRef.sendMessage(Message.raw("[CAO] SetUses failed: API not initialized"));
+            //playerRef.sendMessage(Message.raw("[CAO] SetUses failed: API not initialized"));
             return false;
         }
         if (AbilityID == null || AbilityID.isBlank()) return false;
@@ -118,9 +114,8 @@ public final class CAO_AbilityApi {
         return -1;
     }
 
-    /**
-     * True if ability is usable right now (unlimited OR RemainingUses > 0).
-     */
+    //True if ability is usable right now (unlimited OR RemainingUses > 0).
+
     public static boolean HasUsesLeft(PlayerRef playerRef, String AbilityID) {
         if (state == null) return false;
         int idx = FindSlotIndexByID(playerRef, AbilityID);
@@ -134,9 +129,7 @@ public final class CAO_AbilityApi {
         return s.hotbarRemainingUses[idx] > 0;
     }
 
-    /**
-     * Adds +1 use to a random ability in hotbar, excluding ExcludeID (and excluding empty IDs).
-     */
+
     public static boolean AddUseToRandomAbility(PlayerRef playerRef, String ExcludeID) {
         if (state == null) return false;
 
@@ -170,11 +163,7 @@ public final class CAO_AbilityApi {
     // NEW: Slot-based setter + refill abilities
     // =========================================================
 
-    /**
-     * Sets remaining uses for a slot by index.
-     * Slot is 1..9 (like your UI keys).
-     * Clamps to max uses from the weapon json (hotbarMaxUses).
-     */
+
     public static boolean SetUsesBySlot(PlayerRef playerRef, int slot1to9, int newRemaining) {
         if (state == null) {
             playerRef.sendMessage(Message.raw("[CAO] SetUsesBySlot failed: API not initialized"));
@@ -201,10 +190,6 @@ public final class CAO_AbilityApi {
         return true;
     }
 
-    /**
-     * Refills every ability that has limited uses (MaxUses > 0), excluding ExcludeID.
-     * Returns true if at least one slot was refilled.
-     */
     public static boolean RefillAllAbilitiesWithUses(PlayerRef playerRef, String excludeID) {
         if (state == null) return false;
 
@@ -229,11 +214,6 @@ public final class CAO_AbilityApi {
         return changed;
     }
 
-    /**
-     * Refills ONE random ability that has limited uses (MaxUses > 0) and is not already full,
-     * excluding ExcludeID.
-     * Returns true if something was refilled.
-     */
     public static boolean RefillRandomAbilityWithUses(PlayerRef playerRef, String excludeID) {
         if (state == null) return false;
 
@@ -263,9 +243,8 @@ public final class CAO_AbilityApi {
         return true;
     }
 
-    /**
-     * Placeholder: keep the door open for real RootInteraction execution later.
-     */
+    //Placeholder: keep the door open for real RootInteraction execution later.
+
     public static boolean DoRootInteraction(
             PlayerRef playerRef,
             Store<EntityStore> store,
@@ -275,18 +254,72 @@ public final class CAO_AbilityApi {
     ) {
         if (RootInteraction == null || RootInteraction.isBlank()) return false;
 
-        playerRef.sendMessage(Message.raw("[CAO] DoRootInteraction placeholder: " + RootInteraction));
+        //playerRef.sendMessage(Message.raw("[CAO] DoRootInteraction placeholder: " + RootInteraction));
         return false;
     }
 
     public static void UpdateHud(AbilityContext Context) {
         if (Context == null) return;
-        if (Context.player == null) return;
+        if (Context.Player == null) return;
         if (state == null) return;
 
-        Context.player.getHudManager().setCustomHud(
-                Context.playerRef,
-                new AbilityHotbarHud(Context.playerRef, state)
+        Context.Player.getHudManager().setCustomHud(
+                Context.PlayerRef,
+                new AbilityHotbarHud(Context.PlayerRef, state)
         );
     }
+
+    public static boolean SetPlayerPowerMultiplier(PlayerRef playerRef, float newValue) {
+        if (state == null) return false;
+        if (newValue <= 0.0f) newValue = 1.0f;
+
+        var s = state.get(playerRef.getUsername());
+        s.PlayerPowerMultiplier = newValue;
+        return true;
+    }
+
+    public static float GetPlayerPowerMultiplier(PlayerRef playerRef) {
+        if (state == null) return 1.0f;
+
+        var s = state.get(playerRef.getUsername());
+        float v = s.PlayerPowerMultiplier;
+        return (v <= 0.0f) ? 1.0f : v;
+    }
+
+    public static boolean HasAbilityString(PlayerRef playerRef, String AbilityID, String value) {
+        if (state == null || value == null) return false;
+
+        int idx = FindSlotIndexByID(playerRef, AbilityID);
+        if (idx < 0) return false;
+
+        var s = state.get(playerRef.getUsername());
+        return s.hotbarStringFlags[idx].contains(value);
+    }
+
+    public static boolean AddAbilityString(PlayerRef playerRef, String AbilityID, String value) {
+        if (state == null || value == null) return false;
+
+        int idx = FindSlotIndexByID(playerRef, AbilityID);
+        if (idx < 0) return false;
+
+        var s = state.get(playerRef.getUsername());
+        List<String> list = s.hotbarStringFlags[idx];
+
+        if (list.contains(value)) return false;
+
+        list.add(value);
+        return true;
+    }
+
+    public static boolean RemoveAbilityString(PlayerRef playerRef, String AbilityID, String value) {
+        if (state == null || value == null) return false;
+
+        int idx = FindSlotIndexByID(playerRef, AbilityID);
+        if (idx < 0) return false;
+
+        var s = state.get(playerRef.getUsername());
+        return s.hotbarStringFlags[idx].remove(value);
+    }
+
+
 }

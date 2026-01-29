@@ -1,21 +1,14 @@
 package com.abilities.abilitiesplugin;
 
-import com.hypixel.hytale.builtin.hytalegenerator.fields.FastNoiseLite;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.protocol.Position;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.command.commands.debug.server.ServerCommand;
-import com.hypixel.hytale.server.core.command.system.CommandManager;
-import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
-import com.hypixel.hytale.server.core.modules.entitystats.*;
-import com.hypixel.hytale.server.core.modules.entitystats.asset.*;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
-import org.jline.console.CommandInput;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.util.Random;
 
@@ -25,7 +18,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     @Override
     public boolean CAO_DoAbility(PackagedAbilityData Data, AbilityContext Context) {
-        if (Data == null || Context == null || Context.playerRef == null) return false;
+        if (Data == null || Context == null || Context.PlayerRef == null) return false;
         if (Data.ID == null || Data.ID.isBlank()) return false;
 
         switch (Data.ID) {
@@ -51,8 +44,14 @@ public class CAO_DoAbility implements IAbilityPlugin {
             case "combat_abilities:full_heal":
                 return abilityFullHeal(Data, Context);
 
-            case "combat_abilities:teleportAxis":
+            case "combat_abilities:teleport_axis":
                 return abilityTeleportAxis(Data, Context);
+
+            case "combat_abilities:toggle_local_global":
+                return abilityToggleLocalGlobal(Data,Context);
+
+            case "combat_abilities:set_multiplication_power":
+                return abilitySetMultiplicationPower(Data,Context);
 
             default:
                 return false;
@@ -64,32 +63,33 @@ public class CAO_DoAbility implements IAbilityPlugin {
     // ----------------------------
 
     private boolean abilityRandomTeleport(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
 
-        double fullPower = data.PowerMultiplier;
+        double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
 
-        // random in [-fullPower, +fullPower]
+
         double dx = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
         double dy = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
         double dz = (rng.nextDouble() * 2.0 - 1.0) * fullPower;
 
-        Context.world.execute(() -> {
+        Context.World.execute(() -> {
             TransformComponent transform =
-                    Context.store.getComponent(Context.entityRef, TransformComponent.getComponentType());
+                    Context.Store.getComponent(Context.EntityRef, TransformComponent.getComponentType());
             if (transform == null) return;
 
             Vector3d curPos = transform.getPosition();
+
             Vector3d targetPos = curPos.add(new Vector3d(dx, dy, dz));
 
             Teleport teleport = Teleport.createForPlayer(
-                    Context.world,
+                    Context.World,
                     targetPos,
-                    new Vector3f(0, 0, 0)
+                    transform.getRotation()
             );
 
-            Context.store.addComponent(Context.entityRef, Teleport.getComponentType(), teleport);
+            Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
         return true;
@@ -97,30 +97,178 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
-            return true;
-        } //teleports the player in desired direction
+        if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, data.ID, "GrimoireToggle"))
+        {
+            return abilityLocalTeleportAxis(data, Context);
+        }
 
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+            return true;
+        } // teleports the player in desired direction
+
+        double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
+
+        int AV = Context.AbilityValue;
+        if (AV == 0) return true;
+
+        if (AV < 0) {
+            fullPower *= -1;
+            AV *= -1;
+        }
+
+        double dx = 0;
+        double dy = 0;
+        double dz = 0;
+
+        switch (AV)
+        {
+            case 1: dx = fullPower;
+            //Context.PlayerRef.sendMessage(Message.raw("X"));
+            break; // x
+            case 2: dy = fullPower;
+            //Context.PlayerRef.sendMessage(Message.raw("Y"));
+            break; // y
+            case 3: dz = fullPower;
+            //Context.PlayerRef.sendMessage(Message.raw("Z"));
+            break; // z
+            default: return true;
+        }
+
+        final double fdx = dx;
+        final double fdy = dy;
+        final double fdz = dz;
+
+        Context.World.execute(() -> {
+            TransformComponent transform =
+                    Context.Store.getComponent(Context.EntityRef, TransformComponent.getComponentType());
+            if (transform == null) return;
+
+            Vector3d curPos = transform.getPosition();
+            Vector3d targetPos = curPos.add(new Vector3d(fdx, fdy, fdz));
+
+            Teleport teleport = Teleport.createForPlayer(
+                    Context.World,
+                    targetPos,
+                    transform.getRotation()
+            );
+
+            Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
+        });
+
+        return true;
+    }
+
+    private boolean abilityLocalTeleportAxis(PackagedAbilityData data, AbilityContext Context)
+    {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+            return true;
+        }
+
+        double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
+
+        int AV = Context.AbilityValue;
+        if (AV == 0) return true;
+
+        int dir;
+        if (AV < 0) {
+            dir = -1;
+            AV = -AV;
+        } else {
+            dir = 1;
+        }
+
+        final int axis = AV;
+        final double amount = fullPower;
+
+        Context.World.execute(() -> {
+            TransformComponent transform =
+                    Context.Store.getComponent(Context.EntityRef, TransformComponent.getComponentType());
+            if (transform == null) return;
+
+            Vector3d curPos = transform.getPosition();
+            Vector3f rot = transform.getRotation();
+
+            double pitch = Math.toRadians(rot.x);
+            double yaw   = Math.toRadians(rot.y);
+
+            Vector3d forward = new Vector3d(
+                    -Math.sin(yaw) * Math.cos(pitch),
+                    -Math.sin(pitch),
+                    Math.cos(yaw) * Math.cos(pitch)
+            );
+
+            Vector3d up = new Vector3d(0, 1, 0);
+
+            Vector3d right = new Vector3d(
+                    forward.y * up.z - forward.z * up.y,
+                    forward.z * up.x - forward.x * up.z,
+                    forward.x * up.y - forward.y * up.x
+            );
+
+            forward = normalizeSafe(forward);
+            right   = normalizeSafe(right);
+
+            Vector3d offset;
+
+            switch (axis) {
+                case 1: // LEFT / RIGHT
+                    offset = new Vector3d(
+                            right.x * (-dir * amount),
+                            right.y * (-dir * amount),
+                            right.z * (-dir * amount)
+                    );
+                    break;
+
+                case 3: // FORWARD / BACKWARD
+                    offset = new Vector3d(
+                            forward.x * (dir * amount),
+                            forward.y * (dir * amount),
+                            forward.z * (dir * amount)
+                    );
+                    break;
+
+                case 2: // UP / DOWN
+                    offset = new Vector3d(
+                            up.x * (dir * amount),
+                            up.y * (dir * amount),
+                            up.z * (dir * amount)
+                    );
+                    break;
+
+                default:
+                    return;
+            }
+
+            Vector3d targetPos = curPos.add(offset);
+
+            Teleport teleport = Teleport.createForPlayer(
+                    Context.World,
+                    targetPos,
+                    transform.getRotation()
+            );
+
+            Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
+        });
 
         return true;
     }
 
 
     private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
-        Context.playerRef.sendMessage(Message.raw("Trolololololol"));
+        Context.PlayerRef.sendMessage(Message.raw("Trolololololol"));
         return true;
     }
 
 
     private boolean abilityFullReload(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, data.ID)) return true;
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = CAO_AbilityApi.RefillAllAbilitiesWithUses(Context.playerRef, data.ID);
+        boolean didRefill = CAO_AbilityApi.RefillAllAbilitiesWithUses(Context.PlayerRef, data.ID);
 
         CAO_AbilityApi.UpdateHud(Context);
 
@@ -128,10 +276,10 @@ public class CAO_DoAbility implements IAbilityPlugin {
     }
 
     private boolean abilityReloadRandom(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.HasUsesLeft(Context.playerRef, data.ID)) return true;
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = CAO_AbilityApi.RefillRandomAbilityWithUses(Context.playerRef, data.ID);
+        boolean didRefill = CAO_AbilityApi.RefillRandomAbilityWithUses(Context.PlayerRef, data.ID);
 
         CAO_AbilityApi.UpdateHud(Context);
 
@@ -139,22 +287,22 @@ public class CAO_DoAbility implements IAbilityPlugin {
     }
 
     private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, data.ID)) {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
 
         boolean heads = rng.nextBoolean();
-        EntityStatMap EntityStatMapComponent = Context.store.getComponent(Context.entityRef, EntityStatMap.getComponentType());
+        EntityStatMap EntityStatMapComponent = Context.Store.getComponent(Context.EntityRef, EntityStatMap.getComponentType());
 
 
         if (heads) {
-            Context.playerRef.sendMessage(Message.raw("Lucky!"));
+            Context.PlayerRef.sendMessage(Message.raw("Lucky!"));
             int healthStat = DefaultEntityStatTypes.getHealth();
             EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
             EntityStatMapComponent.setStatValue(healthStat, healthStatValue.getMax());
 
         } else {
-            Context.playerRef.sendMessage(Message.raw("Unlucky!"));
+            Context.PlayerRef.sendMessage(Message.raw("Unlucky!"));
             int healthStat = DefaultEntityStatTypes.getHealth();
             EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
             EntityStatMapComponent.setStatValue(healthStat, 1);
@@ -164,12 +312,12 @@ public class CAO_DoAbility implements IAbilityPlugin {
     }
 
     private boolean abilityFullHeal(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.playerRef, Data.ID)) {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
 
-        EntityStatMap EntityStatMapComponent = Context.store.getComponent(Context.entityRef, EntityStatMap.getComponentType());
+        EntityStatMap EntityStatMapComponent = Context.Store.getComponent(Context.EntityRef, EntityStatMap.getComponentType());
         int healthStat = DefaultEntityStatTypes.getHealth();
         EntityStatValue healthStatValue = EntityStatMapComponent.get(healthStat);
         EntityStatMapComponent.setStatValue(healthStat, healthStatValue.getMax());
@@ -179,7 +327,48 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilityEmpty(PackagedAbilityData Data, AbilityContext Context) {
 
-        Context.playerRef.sendMessage(Message.raw("[CAO] slot marked as empty"));
+        Context.PlayerRef.sendMessage(Message.raw("[CAO] slot marked as empty"));
         return true;
     }
+
+    private boolean abilitySetMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
+    {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
+            return true;
+        }
+        float fullPower = data.PowerMultiplier * Context.PowerMultiplier;
+        CAO_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
+
+        return true;
+    }
+
+    private boolean abilityToggleLocalGlobal(PackagedAbilityData data, AbilityContext Context)
+    {
+        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+            return true;
+        }
+
+        final String teleportAxisId = "combat_abilities:teleport_axis";
+
+        if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
+        {
+            Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
+            CAO_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+        }
+        else
+        {
+            Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
+            CAO_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+        }
+
+        return true;
+    }
+
+
+    private static Vector3d normalizeSafe(Vector3d v) {
+        double len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        if (len <= 0.000001) return new Vector3d(0, 0, 0);
+        return new Vector3d(v.x / len, v.y / len, v.z / len);
+        }
 }

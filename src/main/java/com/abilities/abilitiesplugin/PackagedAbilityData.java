@@ -9,8 +9,11 @@ public final class PackagedAbilityData {
     public final String ID;
     public final int MaxUses;
     public final float PowerMultiplier;
-    public final String RootInteraction;
 
+    // NEW
+    public final int AbilityValue;
+
+    public final String RootInteraction;
     public final int RemainingUses;
 
     public PackagedAbilityData(
@@ -19,6 +22,7 @@ public final class PackagedAbilityData {
             String ID,
             int MaxUses,
             float PowerMultiplier,
+            int AbilityValue,
             String RootInteraction,
             int RemainingUses
     ) {
@@ -29,9 +33,10 @@ public final class PackagedAbilityData {
         this.ID = ID;
         this.MaxUses = MaxUses;
         this.PowerMultiplier = PowerMultiplier;
-        this.RootInteraction = RootInteraction;
 
+        this.AbilityValue = AbilityValue;
+
+        this.RootInteraction = RootInteraction;
         this.RemainingUses = RemainingUses;
     }
 }
-

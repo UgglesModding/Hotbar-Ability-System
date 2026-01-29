@@ -2,14 +2,16 @@ package com.abilities.abilitiesplugin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class AbilityHotbarState {
 
     public static final class State {
         public boolean enabled = false;
 
-        // Which .ui file to append when this player's hotbar is opened.
-        // Comes from the held weapon JSON field: "AbilityBar".
+
         public String abilityBarUiPath = null;
 
         public final String[] hotbarItemIds = new String[9];
@@ -22,6 +24,10 @@ public class AbilityHotbarState {
         public final float[] hotbarPowerMultipliers = new float[9];
         public final String[] hotbarIcons = new String[9];
         public final int[] hotbarRemainingUses = new int[9];
+        public final int[] hotbarAbilityValues = new int[9];
+        public final List<String>[] hotbarStringFlags = new ArrayList[9];
+
+        public float PlayerPowerMultiplier = 1.0f;
 
         public int selectedAbilitySlot = 1;
 
@@ -38,6 +44,8 @@ public class AbilityHotbarState {
                 hotbarPowerMultipliers[i] = 1.0f;
                 hotbarIcons[i] = null;
                 hotbarRemainingUses[i] = 0;
+                hotbarStringFlags[i] = new ArrayList<>();
+
             }
             selectedAbilitySlot = 1;
         }

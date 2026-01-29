@@ -3,63 +3,71 @@
   "AbilityBar": "HCA_TeleportAbilityBar.ui",
   "AbilitySlots": [
     {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 1,
+      "Plugin": true
+    },
+    {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 3,
+      "Plugin": true
+    },
+    {
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": 2,
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Double_Power",
+      "MaxUses": 1,
+      "PowerMultiplier": 2.0,
+      "ID": "combat_abilities:set_multiplication_power",
+      "Plugin": true
+    },
+    {
       "Key": "Ability_Random_Teleport",
-      "MaxUses": 10,
-      "PowerMultiplier": 6.0,
+      "MaxUses": 1000,
+      "PowerMultiplier": 4.0,
       "ID": "combat_abilities:randomteleport",
       "Plugin": true
     },
     {
-      "Key": "Ability_Trololololol",
-      "MaxUses": 30,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:trololol",
+      "Key": "Ability_Toggle_Teleport_Local_Global",
+      "MaxUses": 1000,
+      "ID": "combat_abilities:toggle_local_global",
       "Plugin": true
     },
     {
-      "Key": "Ability_FullReload",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:fullreload",
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -2,
       "Plugin": true
     },
     {
-      "Key": "Ability_ReloadRandom",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:reloadrandom",
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -3,
       "Plugin": true
     },
     {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_CoinFlip",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:coinflip",
-      "Plugin": true
-    },
-    {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
-    },
-    {
-      "Key": "Ability_FullHeal",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:full_heal",
+      "Key": "Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 3.0,
+      "ID": "combat_abilities:teleport_axis",
+      "AbilityValue": -1,
       "Plugin": true
     }
   ],
