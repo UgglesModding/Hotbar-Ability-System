@@ -1,7 +1,7 @@
 {
   "Group": "Uggles",
   "Name": "HotbarCombatAbilities",
-  "Version": "0.1.2",
+  "Version": "0.2.0",
   "Description": "Adds a customizable hotbar based ability system to Hytale",
   "Authors": [
     {
