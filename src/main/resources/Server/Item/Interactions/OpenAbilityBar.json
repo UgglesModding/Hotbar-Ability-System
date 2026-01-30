@@ -1,3 +1,4 @@
 {
-  "Type": "OpenCustomUI"
+  "Type": "OpenCustomUI",
+  "Page": "Custom/AbilityBar.ui"
 }

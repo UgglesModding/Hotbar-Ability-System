@@ -11,7 +11,6 @@ public class CombatAbilityPlugin extends JavaPlugin {
     private static final HytaleLogger LOGGER =
             HytaleLogger.forEnclosingClass();
 
-    // ONE shared state instance
     private final AbilityHotbarState state = new AbilityHotbarState();
 
     private PacketFilter inboundFilter;
@@ -35,13 +34,11 @@ public class CombatAbilityPlugin extends JavaPlugin {
         AbilityInteractionExecutor interactionExecutor =
                 new AbilityInteractionExecutor();
 
-        // Ability system (uses plugin + root paths)
         AbilitySystem abilitySystem =
                 new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
         AbilityDispatch.register(new CAO_DoAbility());
 
-        // --- Commands ---
         this.getCommandRegistry().registerCommand(
                 new AbilityToggleCommand(state, abilitySystem)
         );
@@ -49,12 +46,9 @@ public class CombatAbilityPlugin extends JavaPlugin {
                 new AbilityDebugCommand(state)
         );
 
-        // --- Packet Filter ---
         inboundFilter = PacketAdapters.registerInbound(
-                new AbilityHotbarPacketFilter(state, abilitySystem)
+                new AbilityHotbarPacketFilter(state, abilitySystem, weaponRegistry)
         );
-
-        //LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
     }
 
     @Override

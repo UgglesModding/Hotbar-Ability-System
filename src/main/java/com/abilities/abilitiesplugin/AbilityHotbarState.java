@@ -13,6 +13,7 @@ public class AbilityHotbarState {
 
 
         public String abilityBarUiPath = null;
+        public String cachedHeldItemId = null;
 
         public final String[] hotbarItemIds = new String[9];
         public final String[] hotbarRootInteractions = new String[9];
@@ -27,6 +28,8 @@ public class AbilityHotbarState {
         public final int[] hotbarRemainingUses = new int[9];
         public final int[] hotbarAbilityValues = new int[9];
         public final List<String>[] hotbarStringFlags = new ArrayList[9];
+        public int suppressNextSetActiveSlot = -1;
+        public long suppressNextSetActiveSlotUntilMs = 0;
 
         public float PlayerPowerMultiplier = 1.0f;
 
@@ -47,6 +50,7 @@ public class AbilityHotbarState {
                 hotbarIcons[i] = null;
                 hotbarRemainingUses[i] = 0;
                 hotbarStringFlags[i] = new ArrayList<>();
+
 
             }
             selectedAbilitySlot = 1;

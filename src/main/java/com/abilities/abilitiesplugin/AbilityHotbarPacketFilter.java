@@ -2,12 +2,10 @@ package com.abilities.abilitiesplugin;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.inventory.Inventory;
@@ -18,18 +16,23 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
     private final AbilityHotbarState state;
     private final AbilitySystem abilitySystem;
+    private final WeaponRegistry weaponRegistry;
 
     public AbilityHotbarPacketFilter(
             AbilityHotbarState state,
-            AbilitySystem abilitySystem
+            AbilitySystem abilitySystem,
+            WeaponRegistry weaponRegistry
     ) {
         this.state = state;
         this.abilitySystem = abilitySystem;
+        this.weaponRegistry = weaponRegistry;
     }
 
     private static final class EmptyHud extends CustomUIHud {
@@ -40,82 +43,170 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
     @Override
     public boolean test(@Nonnull PlayerRef playerRef, @Nonnull Packet packet) {
 
-        if (!(packet instanceof SyncInteractionChains chains)) return false;
-
         var s = state.get(playerRef.getUsername());
+
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) return false;
 
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
-        for (SyncInteractionChain chain : chains.updates) {
-            if (!chain.initial) continue;
+        // =========================================================
+        // 1) Ability1 (Q)
+        //    If held item is ours => consume + toggle our HUD.
+        //    Otherwise => let vanilla Ability1 continue.
+        // =========================================================
+        if (packet instanceof SyncInteractionChains chains) {
+            for (SyncInteractionChain chain : chains.updates) {
+                if (!chain.initial) continue;
 
-            if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
-                world.execute(() -> {
-                    Player player = store.getComponent(ref, Player.getComponentType());
-                    if (player == null) return;
+                if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
 
-                    // Always refresh first
-                    abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
+                    String held = s.cachedHeldItemId; // MUST exist in your State
 
-                    var s2 = state.get(playerRef.getUsername());
+                    boolean isRegisteredWeapon =
+                            held != null && !held.isBlank() &&
+                                    ((weaponRegistry.getAbilityBarPath(held) != null) ||
+                                            (weaponRegistry.getAbilitySlots(held) != null));
 
-                    // Check if this weapon actually has anything usable
-                    boolean hasAnything =
-                            (s2.hotbarAbilityIds[0] != null && !s2.hotbarAbilityIds[0].isBlank()) ||
-                                    (s2.hotbarRootInteractions[0] != null && !s2.hotbarRootInteractions[0].isBlank());
+                    // Not ours => vanilla continues
+                    if (!isRegisteredWeapon) return false;
 
-                    if (!hasAnything) {
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] No abilities for held weapon."));
-                        // force it off
-                        s2.enabled = false;
-                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        return;
-                    }
+                    // Ours => toggle on world thread
+                    world.execute(() -> {
+                        Player player = store.getComponent(ref, Player.getComponentType());
+                        if (player == null) return;
 
-                    // Now toggle ON/OFF
-                    s2.enabled = !s2.enabled;
+                        // refresh updates abilityBarUiPath + cachedHeldItemId
+                        abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
 
-                    if (s2.enabled) {
-                        player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
-                    } else {
-                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
-                    }
-                });
+                        var s2 = state.get(playerRef.getUsername());
 
+                        // if missing ui, force off
+                        if (s2.abilityBarUiPath == null || s2.abilityBarUiPath.isBlank()) {
+                            s2.enabled = false;
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                            return;
+                        }
+
+                        s2.enabled = !s2.enabled;
+
+                        if (s2.enabled) {
+                            player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
+                        } else {
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                        }
+                    });
+
+                    // Consume so the item's Ability1 interaction doesn't fight our HUD
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // =========================================================
+        // 2) While bar enabled: intercept SetActiveSlot -> press 1-9
+        // =========================================================
+        if (packet instanceof SetActiveSlot set) {
+
+            if (!s.enabled) return false;
+
+            int incomingSection = readInt(set,
+                    "getSection", "section",
+                    "getSectionId", "sectionId",
+                    "getInventorySectionId", "inventorySectionId"
+            );
+
+            int incomingSlot = readInt(set,
+                    "getSlot", "slot",
+                    "getActiveSlot", "activeSlot",
+                    "getSelectedSlot", "selectedSlot",
+                    "getTargetSlot", "targetSlot"
+            );
+
+            if (incomingSection == Integer.MIN_VALUE || incomingSlot == Integer.MIN_VALUE) return false;
+            if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
+            if (incomingSlot < 0 || incomingSlot > 8) return false;
+
+            long now = System.currentTimeMillis();
+            if (now <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
+                s.suppressNextSetActiveSlot = -1;
+                s.suppressNextSetActiveSlotUntilMs = 0;
                 return true;
             }
 
-            // ---- Block hotbar & activate abilities ----
-            if (!s.enabled) continue;
+            final int pressed0to8 = incomingSlot;
 
-            if (chain.interactionType == InteractionType.SwapFrom && chain.data != null) {
-                int original = chain.activeHotbarSlot;
-                int target = chain.data.targetSlot;
-                if (target < 0 || target > 8) continue;
+            world.execute(() -> {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                if (player == null) return;
 
-                int slot = target + 1;
+                // If they swapped away from our weapon while bar is open, close it
+                var s2 = state.get(playerRef.getUsername());
+                String held = s2.cachedHeldItemId;
 
-                world.execute(() -> {
-                    Player player = store.getComponent(ref, Player.getComponentType());
-                    if (player == null) return;
+                boolean isRegisteredWeapon =
+                        held != null && !held.isBlank() &&
+                                ((weaponRegistry.getAbilityBarPath(held) != null) ||
+                                        (weaponRegistry.getAbilitySlots(held) != null));
 
-                    player.getInventory().setActiveHotbarSlot((byte) original);
-                    playerRef.getPacketHandler().write(
-                            new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original)
-                    );
+                if (!isRegisteredWeapon) {
+                    s2.enabled = false;
+                    player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                    return;
+                }
 
-                    abilitySystem.useSlot(playerRef, store, ref, world, slot);
-                });
+                int original = player.getInventory().getActiveHotbarSlot();
+                if (original < 0 || original > 8) original = 0;
 
-                return true;
-            }
+                s2.suppressNextSetActiveSlot = original;
+                s2.suppressNextSetActiveSlotUntilMs = System.currentTimeMillis() + 250;
+
+                player.getInventory().setActiveHotbarSlot((byte) original);
+
+                // If you ever get weird desync/kicks again, comment this out.
+                playerRef.getPacketHandler().write(new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original));
+
+                int slot1to9 = pressed0to8 + 1;
+                abilitySystem.useSlot(playerRef, store, ref, world, slot1to9);
+            });
+
+            return true;
         }
 
         return false;
+    }
+
+    private static int readInt(Object obj, String... candidates) {
+        if (obj == null) return Integer.MIN_VALUE;
+        Class<?> c = obj.getClass();
+
+        for (String name : candidates) {
+            try {
+                Method m = c.getMethod(name);
+                Object r = m.invoke(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        for (String name : candidates) {
+            try {
+                Field f = c.getField(name);
+                Object r = f.get(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        for (String name : candidates) {
+            try {
+                Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                Object r = f.get(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        return Integer.MIN_VALUE;
     }
 }
