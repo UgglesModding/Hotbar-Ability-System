@@ -19,7 +19,7 @@ public final class AbilityDispatch {
     public static boolean dispatch(PackagedAbilityData data, AbilityContext context) {
         for (IAbilityPlugin plugin : plugins) {
             try {
-                if (plugin.CAO_DoAbility(data, context)) return true;
+                if (plugin.HCA_DoAbility(data, context)) return true;
             } catch (Throwable t) {
                 if (context != null && context.PlayerRef != null) {
                     context.PlayerRef.sendMessage(

@@ -8,16 +8,15 @@ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.util.Random;
 
-public class CAO_DoAbility implements IAbilityPlugin {
+public class HCA_DoAbility implements IAbilityPlugin {
 
     private static final Random rng = new Random();
 
     @Override
-    public boolean CAO_DoAbility(PackagedAbilityData Data, AbilityContext Context) {
+    public boolean HCA_DoAbility(PackagedAbilityData Data, AbilityContext Context) {
         if (Data == null || Context == null || Context.PlayerRef == null) return false;
         if (Data.ID == null || Data.ID.isBlank()) return false;
 
@@ -63,7 +62,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
     // ----------------------------
 
     private boolean abilityRandomTeleport(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
 
@@ -92,19 +91,19 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
 
         return true;
     }
 
     private boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
-        if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, data.ID, "GrimoireToggle"))
+        if (HCA_AbilityApi.HasAbilityString(Context.PlayerRef, data.ID, "GrimoireToggle"))
         {
             return abilityLocalTeleportAxis(data, Context);
         }
 
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         } // teleports the player in desired direction
 
@@ -157,7 +156,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
@@ -165,7 +164,7 @@ public class CAO_DoAbility implements IAbilityPlugin {
     {
         //Context.PlayerRef.sendMessage(Message.raw("Local TP"));
 
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
 
@@ -252,49 +251,49 @@ public class CAO_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
 
 
     private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
         Context.PlayerRef.sendMessage(Message.raw("Trolololololol"));
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
 
     private boolean abilityFullReload(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
+        if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = CAO_AbilityApi.RefillAllAbilitiesWithUses(Context.PlayerRef, data.ID);
+        boolean didRefill = HCA_AbilityApi.RefillAllAbilitiesWithUses(Context.PlayerRef, data.ID);
 
-        CAO_AbilityApi.UpdateHud(Context);
+        HCA_AbilityApi.UpdateHud(Context);
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
     private boolean abilityReloadRandom(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
+        if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = CAO_AbilityApi.RefillRandomAbilityWithUses(Context.PlayerRef, data.ID);
+        boolean didRefill = HCA_AbilityApi.RefillRandomAbilityWithUses(Context.PlayerRef, data.ID);
 
-        CAO_AbilityApi.UpdateHud(Context);
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.UpdateHud(Context);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
     private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
 
@@ -315,12 +314,12 @@ public class CAO_DoAbility implements IAbilityPlugin {
             EntityStatMapComponent.setStatValue(healthStat, 1);
 
         }
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
     private boolean abilityFullHeal(PackagedAbilityData Data, AbilityContext Context) {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
@@ -341,14 +340,14 @@ public class CAO_DoAbility implements IAbilityPlugin {
 
     private boolean abilitySetMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
     {
-        if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
         float fullPower = data.PowerMultiplier * Context.PowerMultiplier;
-        CAO_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
+        HCA_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
 
-        CAO_AbilityApi.ConsumeChargeInHand(Context, 1);
+        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 

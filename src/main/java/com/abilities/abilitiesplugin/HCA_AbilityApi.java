@@ -18,12 +18,12 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Random;
 
-public final class CAO_AbilityApi {
+public final class HCA_AbilityApi {
 
     private static AbilityHotbarState state; // set once from plugin setup
     private static final Random rng = new Random();
 
-    private CAO_AbilityApi() {
+    private HCA_AbilityApi() {
     }
 
     public static void Init(AbilityHotbarState State) {

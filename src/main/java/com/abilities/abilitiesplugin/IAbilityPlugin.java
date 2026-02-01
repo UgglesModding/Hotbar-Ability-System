@@ -1,5 +1,5 @@
 package com.abilities.abilitiesplugin;
 
 public interface IAbilityPlugin {
-    boolean CAO_DoAbility(PackagedAbilityData Data, AbilityContext Context);
+    boolean HCA_DoAbility(PackagedAbilityData Data, AbilityContext Context);
 }

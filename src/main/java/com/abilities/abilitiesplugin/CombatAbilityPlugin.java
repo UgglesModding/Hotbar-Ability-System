@@ -53,14 +53,14 @@ public class CombatAbilityPlugin extends JavaPlugin {
         }
 
         // Init your API/state after registry is active
-        CAO_AbilityApi.Init(state);
+        HCA_AbilityApi.Init(state);
 
         AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
 
         // Ability system (uses registry + state)
         AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
-        AbilityDispatch.register(new CAO_DoAbility());
+        AbilityDispatch.register(new HCA_DoAbility());
 
         // --- Commands ---
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
