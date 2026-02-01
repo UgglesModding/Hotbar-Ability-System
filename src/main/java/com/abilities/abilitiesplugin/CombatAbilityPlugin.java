@@ -10,8 +10,7 @@ import java.io.InputStream;
 
 public class CombatAbilityPlugin extends JavaPlugin {
 
-    private static final HytaleLogger LOGGER =
-            HytaleLogger.forEnclosingClass();
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     // ONE shared state instance
     private final AbilityHotbarState state = new AbilityHotbarState();
@@ -32,46 +31,43 @@ public class CombatAbilityPlugin extends JavaPlugin {
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
 
-        // init receiver so other mods can contribute later
-        AbilityReceiver.init(weaponRegistry);
-
-        // self-register OUR pack using OUR classloader
-        try (InputStream pack = getClass().getClassLoader().getResourceAsStream("HCA/hca_pack.json")) {
+        // Load Hotbar's own pack FIRST, then flush any queued packs from other mods.
+        try (InputStream pack = getClass().getClassLoader().getResourceAsStream("HCA/HCA_pack.json")) {
             if (pack == null) {
-                System.out.println("[HotbarAbilities] Missing HCA/hca_pack.json (cannot load internal weapons)");
-            } else {
-                AbilityReceiver.registerContributionPack(getClass().getClassLoader(), pack, "HotbarAbilities");
+                System.out.println("[HotbarAbilities] Missing HCA/HCA_pack.json");
+                return;
             }
-        } catch (Throwable t) {
-            System.out.println("[HotbarAbilities] Failed self-register pack: " + t.getMessage());
+
+            boolean ok = AbilityReceiver.activate(
+                    weaponRegistry,
+                    getClass().getClassLoader(),
+                    pack,
+                    "HotbarAbilities"
+            );
+
+            System.out.println("[HotbarAbilities] Activated ok=" + ok);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
         }
 
+        // Init your API/state after registry is active
         CAO_AbilityApi.Init(state);
-        AbilityReceiver.init(weaponRegistry);
 
-        AbilityInteractionExecutor interactionExecutor =
-                new AbilityInteractionExecutor();
+        AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
 
-        // Ability system (uses plugin + root paths)
-        AbilitySystem abilitySystem =
-                new AbilitySystem(weaponRegistry, state, interactionExecutor);
+        // Ability system (uses registry + state)
+        AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
         AbilityDispatch.register(new CAO_DoAbility());
 
         // --- Commands ---
-        this.getCommandRegistry().registerCommand(
-                new AbilityToggleCommand(state, abilitySystem)
-        );
-        this.getCommandRegistry().registerCommand(
-                new AbilityDebugCommand(state)
-        );
+        this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
+        this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));
 
         // --- Packet Filter ---
-        inboundFilter = PacketAdapters.registerInbound(
-                new AbilityHotbarPacketFilter(state, abilitySystem)
-        );
-
-        //LOGGER.atInfo().log("[CAO] ExamplePlugin setup complete");
+        inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
     }
 
     @Override
