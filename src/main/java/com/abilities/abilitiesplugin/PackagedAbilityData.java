@@ -7,10 +7,8 @@ public final class PackagedAbilityData {
 
     public final String Key;
     public final String ID;
-
     public final int MaxUses;
     public final float PowerMultiplier;
-
     public final boolean Consume;
 
     public final int AbilityValue;
@@ -34,15 +32,13 @@ public final class PackagedAbilityData {
 
         this.Key = Key;
         this.ID = ID;
-
         this.MaxUses = MaxUses;
         this.PowerMultiplier = PowerMultiplier;
-
-        this.Consume = Consume;
-
         this.AbilityValue = AbilityValue;
 
         this.RootInteraction = RootInteraction;
         this.RemainingUses = RemainingUses;
+
+        this.Consume = Consume;
     }
 }

@@ -1,0 +1,21 @@
+{
+  "Overrides": {
+    "Weapon_Sword_Mithril": "HCA_Weapon"
+  },
+  "OverrideList": [
+    {
+      "ItemId": "Weapon_Sword_Iron",
+      "UseDefinition": "HCA_Weapon",
+      "AbilityBar": "AbilityBar.ui",
+      "SlotOverrides": {
+        "5": {
+          "Key": "Ability_Random_Teleport",
+          "MaxUses": 5,
+          "PowerMultiplier": 6.0,
+          "ID": "combat_abilities:randomteleport",
+          "Plugin": true
+        }
+      }
+    }
+  ]
+}

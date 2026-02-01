@@ -32,6 +32,9 @@ public class AbilityHotbarState {
 
         public int selectedAbilitySlot = 1;
 
+        public int suppressNextSetActiveSlot = -1;
+        public long suppressNextSetActiveSlotUntilMs = 0;
+
         public void fillAllEmpty() {
             abilityBarUiPath = null;
 
