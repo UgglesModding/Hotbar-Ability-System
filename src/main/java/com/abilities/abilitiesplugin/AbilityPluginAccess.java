@@ -17,7 +17,7 @@ public final class AbilityPluginAccess {
 
     public static AbilityHotbarState.State State(PlayerRef playerRef) {
         if (StateRef == null) {
-            throw new IllegalStateException("ExamplePluginAccess not initialized");
+            throw new IllegalStateException("AbilityPlugin not initialized");
         }
         return StateRef.get(playerRef.getUsername());
     }

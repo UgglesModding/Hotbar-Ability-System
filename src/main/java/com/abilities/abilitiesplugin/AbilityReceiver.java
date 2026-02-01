@@ -6,19 +6,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/**
- * Other mods call into this to register:
- * - Overrides (vanilla ItemId -> UseDefinition)
- * - Index files (which point to weapon definition json files)
- *
- * IMPORTANT:
- * We do NOT try to "discover" other mods' resources ourselves.
- * The dependent mod passes its own ClassLoader + resource paths.
- */
 public final class AbilityReceiver {
 
     private static final Gson gson = new GsonBuilder().create();
-
     private static WeaponRegistry weaponRegistry;
 
     private AbilityReceiver() {}
@@ -52,8 +42,9 @@ public final class AbilityReceiver {
                     JsonElement v = overridesObj.get(key);
                     if (v == null || v.isJsonNull()) continue;
 
-                    String useDef = null;
-                    try { useDef = v.getAsString(); } catch (Throwable ignored) {}
+                    String useDef;
+                    try { useDef = v.getAsString(); }
+                    catch (Throwable ignored) { continue; }
 
                     if (key == null || key.isBlank()) continue;
                     if (useDef == null || useDef.isBlank()) continue;
@@ -75,8 +66,10 @@ public final class AbilityReceiver {
                 int countIndexes = 0;
                 for (JsonElement idxEl : indexesArr) {
                     if (idxEl == null || idxEl.isJsonNull()) continue;
-                    String idxPath = null;
-                    try { idxPath = idxEl.getAsString(); } catch (Throwable ignored) {}
+                    String idxPath;
+                    try { idxPath = idxEl.getAsString(); }
+                    catch (Throwable ignored) { continue; }
+
                     if (idxPath == null || idxPath.isBlank()) continue;
 
                     idxPath = normalizePath(idxPath);
@@ -85,6 +78,21 @@ public final class AbilityReceiver {
                 }
 
                 System.out.println("[AbilityReceiver] Indexes processed=" + countIndexes + " from " + sourceTag);
+            }
+
+            // ---- OverrideList (THIS WAS MISSING) ----
+            JsonArray overrideListArr = root.getAsJsonArray("OverrideList");
+            if (overrideListArr != null && overrideListArr.size() > 0) {
+                List<JsonObject> list = new ArrayList<>();
+                for (JsonElement oEl : overrideListArr) {
+                    if (oEl == null || !oEl.isJsonObject()) continue;
+                    list.add(oEl.getAsJsonObject());
+                }
+
+                if (!list.isEmpty()) {
+                    weaponRegistry.registerOverrideList(list, sourceTag);
+                    System.out.println("[AbilityReceiver] OverrideList merged=" + list.size() + " from " + sourceTag);
+                }
             }
 
             return true;
