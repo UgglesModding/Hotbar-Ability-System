@@ -6,6 +6,8 @@ import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
+import java.io.InputStream;
+
 public class CombatAbilityPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER =
@@ -29,8 +31,23 @@ public class CombatAbilityPlugin extends JavaPlugin {
     protected void setup() {
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
-        weaponRegistry.loadAllFromResources();
+
+        // init receiver so other mods can contribute later
+        AbilityReceiver.init(weaponRegistry);
+
+        // self-register OUR pack using OUR classloader
+        try (InputStream pack = getClass().getClassLoader().getResourceAsStream("HCA/hca_pack.json")) {
+            if (pack == null) {
+                System.out.println("[HotbarAbilities] Missing HCA/hca_pack.json (cannot load internal weapons)");
+            } else {
+                AbilityReceiver.registerContributionPack(getClass().getClassLoader(), pack, "HotbarAbilities");
+            }
+        } catch (Throwable t) {
+            System.out.println("[HotbarAbilities] Failed self-register pack: " + t.getMessage());
+        }
+
         CAO_AbilityApi.Init(state);
+        AbilityReceiver.init(weaponRegistry);
 
         AbilityInteractionExecutor interactionExecutor =
                 new AbilityInteractionExecutor();

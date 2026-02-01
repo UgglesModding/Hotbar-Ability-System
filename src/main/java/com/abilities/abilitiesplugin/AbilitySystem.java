@@ -9,7 +9,6 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AbilitySystem {
@@ -43,63 +42,53 @@ public class AbilitySystem {
             return;
         }
 
+        // NEW: register via overrides if needed
+        weaponRegistry.ensureRegistered(heldItemId);
+
         List<WeaponAbilitySlot> slots = weaponRegistry.getAbilitySlots(heldItemId);
         s.abilityBarUiPath = weaponRegistry.getAbilityBarPath(heldItemId);
 
+        if (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank() || slots == null) {
+            s.fillAllEmpty();
+            return;
+        }
+
         for (int i = 0; i < 9; i++) {
-            if (slots != null && i < slots.size()) {
+            if (i < slots.size()) {
                 WeaponAbilitySlot slot = slots.get(i);
 
-                String key = (slot == null) ? null : slot.Key;
-                s.hotbarItemIds[i] = key;
-
+                s.hotbarItemIds[i] = (slot == null) ? null : slot.Key;
                 s.hotbarRootInteractions[i] = (slot == null) ? null : slot.RootInteraction;
 
                 s.hotbarAbilityIds[i] = (slot == null) ? null : slot.ID;
                 s.hotbarPluginFlags[i] = slot != null && slot.Plugin;
+                s.hotbarConsumeFlags[i] = slot != null && slot.Consume;
 
                 s.hotbarMaxUses[i] = (slot == null) ? 0 : slot.MaxUses;
                 s.hotbarAbilityValues[i] = (slot == null) ? 0 : slot.AbilityValue;
 
-                // Automatically false
-                s.hotbarConsumeFlags[i] = slot != null && slot.Consume;
-
                 float power = 1.0f;
-                if (slot != null && slot.PowerMultiplier > 0.0f) {
-                    power = slot.PowerMultiplier;
-                }
+                if (slot != null && slot.PowerMultiplier > 0.0f) power = slot.PowerMultiplier;
                 s.hotbarPowerMultipliers[i] = power;
 
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
 
-                if (s.hotbarMaxUses[i] > 0) {
-                    s.hotbarRemainingUses[i] = s.hotbarMaxUses[i];
-                } else {
-                    s.hotbarRemainingUses[i] = 0;
-                }
-
-                if (s.hotbarStringFlags[i] == null) {
-                    s.hotbarStringFlags[i] = new ArrayList<>();
-                }
+                if (s.hotbarMaxUses[i] > 0) s.hotbarRemainingUses[i] = s.hotbarMaxUses[i];
+                else s.hotbarRemainingUses[i] = 0;
 
             } else {
-                // Clear everything so no stale values carry over
                 s.hotbarItemIds[i] = null;
                 s.hotbarRootInteractions[i] = null;
 
                 s.hotbarAbilityIds[i] = null;
                 s.hotbarPluginFlags[i] = false;
+                s.hotbarConsumeFlags[i] = false;
 
                 s.hotbarMaxUses[i] = 0;
                 s.hotbarPowerMultipliers[i] = 1.0f;
                 s.hotbarIcons[i] = null;
                 s.hotbarRemainingUses[i] = 0;
                 s.hotbarAbilityValues[i] = 0;
-
-                // IMPORTANT: clear consume too
-                s.hotbarConsumeFlags[i] = false;
-
-                s.hotbarStringFlags[i] = new ArrayList<>();
             }
         }
 
@@ -114,16 +103,13 @@ public class AbilitySystem {
         s.selectedAbilitySlot = slot1to9;
 
         boolean plugin = s.hotbarPluginFlags[slot0to8];
-
-        boolean consume = s.hotbarConsumeFlags[slot0to8];
+        boolean consume = s.hotbarConsumeFlags[slot0to8]; // FIXED
 
         String id = s.hotbarAbilityIds[slot0to8];
         String rootInteraction = s.hotbarRootInteractions[slot0to8];
 
         if (plugin) {
-            if (id == null || id.isBlank()) {
-                return;
-            }
+            if (id == null || id.isBlank()) return;
 
             String key = s.hotbarItemIds[slot0to8];
             int maxUses = s.hotbarMaxUses[slot0to8];
@@ -154,9 +140,7 @@ public class AbilitySystem {
                 );
 
                 boolean handled = AbilityDispatch.dispatch(data, ctx);
-                if (!handled) {
-                    return;
-                }
+                if (!handled) return;
 
                 if (s.enabled && ctx.Player != null) {
                     ctx.Player.getHudManager().setCustomHud(
@@ -173,9 +157,6 @@ public class AbilitySystem {
 
         world.execute(() -> {
             boolean ok = interactionExecutor.execute(rootInteraction, playerRef, store, ref, world);
-            if (!ok) {
-                return;
-            }
 
             Player player = store.getComponent(ref, Player.getComponentType());
             if (s.enabled && player != null) {

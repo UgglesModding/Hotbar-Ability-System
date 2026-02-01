@@ -7,7 +7,6 @@ import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.inventory.Inventory;
@@ -18,6 +17,8 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
@@ -40,82 +41,199 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
     @Override
     public boolean test(@Nonnull PlayerRef playerRef, @Nonnull Packet packet) {
 
-        if (!(packet instanceof SyncInteractionChains chains)) return false;
-
         var s = state.get(playerRef.getUsername());
+
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) return false;
 
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
-        for (SyncInteractionChain chain : chains.updates) {
-            if (!chain.initial) continue;
+        // =========================================================
+        // 1) SyncInteractionChains (Ability1 toggle + SwapFrom hotbar)
+        // =========================================================
+        if (packet instanceof SyncInteractionChains chains) {
 
-            if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
-                world.execute(() -> {
-                    Player player = store.getComponent(ref, Player.getComponentType());
-                    if (player == null) return;
+            for (SyncInteractionChain chain : chains.updates) {
+                if (!chain.initial) continue;
 
-                    // Always refresh first
-                    abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
+                // -------------------------
+                // Ability1 (Q): toggle bar
+                // -------------------------
+                if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
 
-                    var s2 = state.get(playerRef.getUsername());
+                    world.execute(() -> {
+                        Player player = store.getComponent(ref, Player.getComponentType());
+                        if (player == null) return;
 
-                    // Check if this weapon actually has anything usable
-                    boolean hasAnything =
-                            (s2.hotbarAbilityIds[0] != null && !s2.hotbarAbilityIds[0].isBlank()) ||
-                                    (s2.hotbarRootInteractions[0] != null && !s2.hotbarRootInteractions[0].isBlank());
+                        abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
+                        var s2 = state.get(playerRef.getUsername());
 
-                    if (!hasAnything) {
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] No abilities for held weapon."));
-                        // force it off
-                        s2.enabled = false;
-                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        return;
-                    }
+                        if (s2.abilityBarUiPath == null || s2.abilityBarUiPath.isBlank()) {
+                            s2.enabled = false;
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                            return;
+                        }
 
-                    // Now toggle ON/OFF
-                    s2.enabled = !s2.enabled;
+                        s2.enabled = !s2.enabled;
 
-                    if (s2.enabled) {
-                        player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] ON"));
-                    } else {
-                        player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        //playerRef.sendMessage(Message.raw("[AbilityBar] OFF"));
-                    }
-                });
+                        if (s2.enabled) {
+                            player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
+                        } else {
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                        }
+                    });
 
+                    return true; // consume Ability1
+                }
+
+                // ---------------------------------------------------
+                // SwapFrom: this is the REAL hotbar swap interaction
+                // Intercept it while bar is enabled to prevent swapping
+                // ---------------------------------------------------
+                if (!s.enabled) continue;
+
+                if (chain.interactionType == InteractionType.SwapFrom && chain.data != null) {
+                    int original = chain.activeHotbarSlot;
+                    int target = chain.data.targetSlot;
+
+                    if (target < 0 || target > 8) continue;
+                    if (original < 0 || original > 8) original = 0;
+
+                    int slot1to9 = target + 1;
+
+                    // Do everything on world thread
+                    int finalOriginal = original;
+                    world.execute(() -> {
+                        Player player = store.getComponent(ref, Player.getComponentType());
+                        if (player == null) return;
+
+                        var s2 = state.get(playerRef.getUsername());
+
+                        // If this SwapFrom is our own correction echo, ignore it
+                        long now = System.currentTimeMillis();
+                        if (now <= s2.suppressNextSetActiveSlotUntilMs && target == s2.suppressNextSetActiveSlot) {
+                            s2.suppressNextSetActiveSlot = -1;
+                            s2.suppressNextSetActiveSlotUntilMs = 0;
+                            return;
+                        }
+
+                        // Force server slot back to original (prevents actual item swap)
+                        player.getInventory().setActiveHotbarSlot((byte) finalOriginal);
+
+                        // Suppress the echo from the correction packet
+                        s2.suppressNextSetActiveSlot = finalOriginal;
+                        s2.suppressNextSetActiveSlotUntilMs = System.currentTimeMillis() + 250;
+
+                        // Tell client "nope, stay on original"
+                        playerRef.getPacketHandler().write(
+                                new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, finalOriginal)
+                        );
+
+                        // Trigger ability
+                        abilitySystem.useSlot(playerRef, store, ref, world, slot1to9);
+                    });
+
+                    return true; // consume SwapFrom so hotbar doesn't change
+                }
+            }
+
+            return false;
+        }
+
+        // =========================================================
+        // 2) Fallback: SetActiveSlot interception (some builds send this)
+        // =========================================================
+        if (packet instanceof SetActiveSlot set) {
+
+            if (!s.enabled) return false;
+
+            int incomingSection = readInt(set,
+                    "getSection", "section",
+                    "getSectionId", "sectionId",
+                    "getInventorySectionId", "inventorySectionId",
+                    "getSectionID", "sectionID"
+            );
+
+            int incomingSlot = readInt(set,
+                    "getSlot", "slot",
+                    "getActiveSlot", "activeSlot",
+                    "getSelectedSlot", "selectedSlot",
+                    "getTargetSlot", "targetSlot"
+            );
+
+            if (incomingSection == Integer.MIN_VALUE || incomingSlot == Integer.MIN_VALUE) return false;
+
+            if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
+            if (incomingSlot < 0 || incomingSlot > 8) return false;
+
+            long now = System.currentTimeMillis();
+            if (now <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
+                s.suppressNextSetActiveSlot = -1;
+                s.suppressNextSetActiveSlotUntilMs = 0;
                 return true;
             }
 
-            // ---- Block hotbar & activate abilities ----
-            if (!s.enabled) continue;
+            final int pressed0to8 = incomingSlot;
 
-            if (chain.interactionType == InteractionType.SwapFrom && chain.data != null) {
-                int original = chain.activeHotbarSlot;
-                int target = chain.data.targetSlot;
-                if (target < 0 || target > 8) continue;
+            world.execute(() -> {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                if (player == null) return;
 
-                int slot = target + 1;
+                var s2 = state.get(playerRef.getUsername());
 
-                world.execute(() -> {
-                    Player player = store.getComponent(ref, Player.getComponentType());
-                    if (player == null) return;
+                int original = player.getInventory().getActiveHotbarSlot();
+                if (original < 0 || original > 8) original = 0;
 
-                    player.getInventory().setActiveHotbarSlot((byte) original);
-                    playerRef.getPacketHandler().write(
-                            new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original)
-                    );
+                // suppress echo
+                s2.suppressNextSetActiveSlot = original;
+                s2.suppressNextSetActiveSlotUntilMs = System.currentTimeMillis() + 250;
 
-                    abilitySystem.useSlot(playerRef, store, ref, world, slot);
-                });
+                player.getInventory().setActiveHotbarSlot((byte) original);
+                playerRef.getPacketHandler().write(new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original));
 
-                return true;
-            }
+                int slot1to9 = pressed0to8 + 1;
+                abilitySystem.useSlot(playerRef, store, ref, world, slot1to9);
+            });
+
+            return true;
         }
 
         return false;
+    }
+
+    private static int readInt(Object obj, String... candidates) {
+        if (obj == null) return Integer.MIN_VALUE;
+        Class<?> c = obj.getClass();
+
+        // methods
+        for (String name : candidates) {
+            try {
+                Method m = c.getMethod(name);
+                Object r = m.invoke(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        // public fields
+        for (String name : candidates) {
+            try {
+                Field f = c.getField(name);
+                Object r = f.get(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        // declared fields
+        for (String name : candidates) {
+            try {
+                Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                Object r = f.get(obj);
+                if (r instanceof Number n) return n.intValue();
+            } catch (Throwable ignored) {}
+        }
+
+        return Integer.MIN_VALUE;
     }
 }
