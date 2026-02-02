@@ -12,18 +12,12 @@ public class CombatAbilityPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    // ONE shared state instance
     private final AbilityHotbarState state = new AbilityHotbarState();
-
     private PacketFilter inboundFilter;
 
     public CombatAbilityPlugin(JavaPluginInit init) {
         super(init);
-        LOGGER.atInfo().log(
-                "Loaded %s version %s",
-                this.getName(),
-                this.getManifest().getVersion().toString()
-        );
+        LOGGER.atInfo().log("Loaded %s version %s", this.getName(), this.getManifest().getVersion().toString());
     }
 
     @Override
@@ -31,42 +25,45 @@ public class CombatAbilityPlugin extends JavaPlugin {
 
         WeaponRegistry weaponRegistry = new WeaponRegistry();
 
-        // Load Hotbar's own pack FIRST, then flush any queued packs from other mods.
+        // 1) Init hotbar systems that depend on state
+        HCA_AbilityApi.Init(state);
+
+        // ✅ 2) Auto-discover packs from other mods BEFORE activating
+        ModPackAutoDiscovery.scanAndRegisterAllPacks();
+
+        // 3) Activate receiver + load Hotbar's own pack
         try (InputStream pack = getClass().getClassLoader().getResourceAsStream("HCA/HCA_pack.json")) {
             if (pack == null) {
-                System.out.println("[HotbarAbilities] Missing HCA/HCA_pack.json");
+                System.out.println("[HotbarAbilities] Missing resource: src/main/resources/HCA/HCA_pack.json");
                 return;
             }
 
             boolean ok = AbilityReceiver.activate(
                     weaponRegistry,
-                    getClass().getClassLoader(),
+                    getClass().getClassLoader(), // ✅ fixed (ClassLoader expected)
                     pack,
                     "HotbarAbilities"
             );
 
-            System.out.println("[HotbarAbilities] Activated ok=" + ok);
+            System.out.println("[HotbarAbilities] activate ok=" + ok);
+            if (!ok) return;
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            System.out.println("[HotbarAbilities] Failed activating: " + t.getMessage());
             return;
         }
 
-        // Init your API/state after registry is active
-        HCA_AbilityApi.Init(state);
-
+        // 4) Now build ability system
         AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
-
-        // Ability system (uses registry + state)
         AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
         AbilityDispatch.register(new HCA_DoAbility());
 
-        // --- Commands ---
+        // Commands
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
         this.getCommandRegistry().registerCommand(new AbilityDebugCommand(state));
 
-        // --- Packet Filter ---
+        // Packet filter
         inboundFilter = PacketAdapters.registerInbound(new AbilityHotbarPacketFilter(state, abilitySystem));
     }
 

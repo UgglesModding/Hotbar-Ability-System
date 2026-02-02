@@ -9,144 +9,48 @@ import java.util.*;
 
 public class WeaponRegistry {
 
-    // NEW: pack file inside your jar
-    private static final String DEFAULT_PACK_PATH = "HCA/HCA_pack.json";
-
-    // Base definitions loaded from indexes (and any direct weapon defs by ItemId)
     private final Map<String, WeaponDefinition> byItemId = new HashMap<>();
 
-    // Resolved (patched) per-item definitions
-    private final Map<String, WeaponDefinition> resolvedByItemId = new HashMap<>();
-
-    // Shorthand map: itemId -> useDefinitionId (from "Overrides")
+    // shorthand: item -> useDef
     private final Map<String, String> overrideUseDefinition = new HashMap<>();
 
-    // Full patch map: itemId -> patch (from OverrideList + Overrides synthesized)
-    private final Map<String, OverridePatch> patchesByItemId = new HashMap<>();
-
-    // For “mods loaded later can overwrite”
-    private final Map<String, Integer> patchRevision = new HashMap<>();
-    private final Map<String, Integer> resolvedRevision = new HashMap<>();
+    // full patch: item -> patch
+    private final Map<String, OverridePatch> overridePatches = new HashMap<>();
 
     private final Gson gson = new GsonBuilder().create();
 
-    // ==========================================
-    // Loading
-    // ==========================================
+    // ----------------------------
+    // Stats helpers (for debug logs)
+    // ----------------------------
+    public int countDefinitions() { return byItemId.size(); }
+    public int countOverrideMap() { return overrideUseDefinition.size(); }
+    public int countOverridePatches() { return overridePatches.size(); }
 
-    /** Clears everything and loads ONLY from this pack path in this plugin jar. */
-    public void loadAllFromPack() {
-        loadAllFromPack(DEFAULT_PACK_PATH);
-    }
-
-    public void loadAllFromPack(String packResourcePath) {
-        clearAll();
-
-        WeaponPack pack = readPack(getClass().getClassLoader(), packResourcePath);
-        if (pack == null) {
-            System.out.println("[WeaponRegistry] Missing/invalid pack: " + packResourcePath);
-            return;
-        }
-
-        mergePack(getClass().getClassLoader(), pack, pack.Source != null ? pack.Source : "HotbarAbilities", true);
-
-        System.out.println("[WeaponRegistry] Loaded defs=" + byItemId.size()
-                + " resolved=" + resolvedByItemId.size()
-                + " overrideMap=" + overrideUseDefinition.size()
-                + " patches=" + patchesByItemId.size()
-                + " from pack=" + packResourcePath);
-    }
-
-    /**
-     * Merge a contributor pack. Does NOT clear. Last loaded wins.
-     * This is how other mods can overwrite data after your plugin loads.
-     */
-    public void mergeContributorPack(ClassLoader contributorLoader, String packResourcePath, String sourceTag) {
-        if (contributorLoader == null) return;
-
-        WeaponPack pack = readPack(contributorLoader, packResourcePath);
-        if (pack == null) {
-            System.out.println("[WeaponRegistry] (Contributor) Missing/invalid pack: " + packResourcePath + " from " + sourceTag);
-            return;
-        }
-
-        mergePack(contributorLoader, pack, sourceTag, false);
-
-        System.out.println("[WeaponRegistry] (Contributor) Merged pack from " + sourceTag
-                + " defs=" + byItemId.size()
-                + " resolved=" + resolvedByItemId.size()
-                + " patches=" + patchesByItemId.size());
-    }
-
-    private void mergePack(ClassLoader loader, WeaponPack pack, String sourceTag, boolean isFreshLoad) {
-        if (pack == null) return;
-
-        // 1) Load indexes (base definitions)
-        Set<String> visited = new HashSet<>();
-        if (pack.Indexes != null) {
-            for (String idx : pack.Indexes) {
-                if (idx == null || idx.isBlank()) continue;
-                loadIndexRecursiveFromLoader(loader, idx, visited, sourceTag);
-            }
-        }
-
-        // 2) Merge shorthand overrides (Overrides)
-        if (pack.Overrides != null && !pack.Overrides.isEmpty()) {
-            for (var e : pack.Overrides.entrySet()) {
-                String itemId = ItemIdUtil.normalizeItemId(e.getKey());
-                String useDef = ItemIdUtil.normalizeItemId(e.getValue());
-                if (itemId == null || itemId.isBlank()) continue;
-                if (useDef == null || useDef.isBlank()) continue;
-
-                overrideUseDefinition.put(itemId, useDef);
-
-                // Synthesize a patch entry too (so ensureRegistered can build from it even without OverrideList)
-                OverridePatch p = patchesByItemId.get(itemId);
-                if (p == null) p = new OverridePatch();
-                p.itemId = itemId;
-                p.useDefinition = useDef;
-                patchesByItemId.put(itemId, p);
-
-                bumpPatchRevision(itemId);
-            }
-        }
-
-        // 3) Merge OverrideList patches (wins over shorthand)
-        if (pack.OverrideList != null && !pack.OverrideList.isEmpty()) {
-            mergeOverrideList(pack.OverrideList, sourceTag);
-        }
-
-        // If this is a merge (mods loaded later), we do NOT clear resolvedByItemId,
-        // but revisions will force a rebuild on next access.
-        // If you want immediate rebuild, you can call ensureRegistered(itemId) after bump.
-    }
-
-    private WeaponPack readPack(ClassLoader loader, String packResourcePath) {
-        JsonObject obj = readJsonObjectFromLoader(loader, packResourcePath);
-        if (obj == null) return null;
-
-        try {
-            return gson.fromJson(obj, WeaponPack.class);
-        } catch (Throwable t) {
-            System.out.println("[WeaponRegistry] Failed to parse pack " + packResourcePath + " : " + t.getMessage());
-            return null;
-        }
-    }
-
-    // ==========================================
+    // ----------------------------
     // Lookups
-    // ==========================================
+    // ----------------------------
 
-    /** Returns raw base definition if present (no override patching). */
-    public WeaponDefinition getBaseDefinition(String itemOrDefId) {
-        if (itemOrDefId == null) return null;
-        String n = ItemIdUtil.normalizeItemId(itemOrDefId);
-        return byItemId.get(n);
-    }
+    public WeaponDefinition getResolvedDefinition(String itemId) {
+        if (itemId == null || itemId.isBlank()) return null;
+        String n = ItemIdUtil.normalizeItemId(itemId);
 
-    /** Returns resolved definition for the HELD item (applies patches). */
-    public WeaponDefinition getResolved(String itemId) {
-        return getResolvedDefinition(itemId);
+        // already resolved or base definition
+        WeaponDefinition direct = byItemId.get(n);
+        if (direct != null) return direct;
+
+        // patch-based override (clone + patch)
+        if (ensureRegistered(n)) {
+            return byItemId.get(n);
+        }
+
+        // shorthand override map to base def
+        String useDef = overrideUseDefinition.get(n);
+        if (useDef != null && !useDef.isBlank()) {
+            WeaponDefinition base = byItemId.get(useDef);
+            if (base != null) return base;
+        }
+
+        return null;
     }
 
     public List<WeaponAbilitySlot> getAbilitySlots(String itemId) {
@@ -159,135 +63,131 @@ public class WeaponRegistry {
         return (d == null) ? null : d.AbilityBar;
     }
 
-    /**
-     * Core resolution:
-     * - If item has a patch => ensure it's registered (clone base def -> apply patch -> cache)
-     * - Else if item is directly defined => return it
-     * - Else if shorthand override exists => return base def (unpatched clone not needed)
-     */
-    private WeaponDefinition getResolvedDefinition(String itemId) {
-        if (itemId == null || itemId.isBlank()) return null;
-        String nItem = ItemIdUtil.normalizeItemId(itemId);
+    // ----------------------------
+    // Pack registration methods
+    // ----------------------------
 
-        OverridePatch patch = patchesByItemId.get(nItem);
-        if (patch != null) {
-            // If patch exists, we must build/refresh the resolved entry
-            if (ensureRegistered(nItem)) {
-                WeaponDefinition resolved = resolvedByItemId.get(nItem);
-                if (resolved != null) return resolved;
-            }
-            // If patch exists but failed to resolve, fall through (debug will show why)
+    public void registerOverrideMap(Map<String, String> overridesMap, String sourceTag) {
+        if (overridesMap == null || overridesMap.isEmpty()) return;
+
+        for (var e : overridesMap.entrySet()) {
+            String itemId = e.getKey();
+            String useDef = e.getValue();
+            if (itemId == null || itemId.isBlank()) continue;
+            if (useDef == null || useDef.isBlank()) continue;
+
+            String nItem = ItemIdUtil.normalizeItemId(itemId);
+            String nDef = ItemIdUtil.normalizeItemId(useDef);
+
+            overrideUseDefinition.put(nItem, nDef);
+
+            // also create a minimal patch so ensureRegistered can build a clone if needed
+            OverridePatch p = overridePatches.getOrDefault(nItem, new OverridePatch());
+            p.itemId = nItem;
+            p.useDefinition = nDef;
+            overridePatches.put(nItem, p);
         }
 
-        // Direct base definition (some mods may define weapon defs matching itemId)
-        WeaponDefinition direct = byItemId.get(nItem);
-        if (direct != null) return direct;
-
-        // Shorthand override map: item -> useDef
-        String useDef = overrideUseDefinition.get(nItem);
-        if (useDef != null && !useDef.isBlank()) {
-            return byItemId.get(useDef);
-        }
-
-        return null;
+        System.out.println("[WeaponRegistry] Override map merged=" + overridesMap.size() + " from " + sourceTag);
     }
-
-    // ==========================================
-    // Override patching (the logic you asked for)
-    // ==========================================
 
     /**
-     * Ensures that for this itemId, if there is a patch, we create/refresh a resolved definition:
-     * - if resolved missing OR patch updated => clone from base definition (UseDefinition) and apply patch
+     * Reads OverrideList JSON entries and merges them.
+     * Important detail: If UseDefinition is missing, we fall back to Overrides map.
      */
-    public boolean ensureRegistered(String itemId) {
-        if (itemId == null || itemId.isBlank()) return false;
+    public void registerOverrideListFromJson(JsonArray overrideList, String sourceTag) {
+        if (overrideList == null || overrideList.size() == 0) return;
 
-        String nItem = ItemIdUtil.normalizeItemId(itemId);
+        int added = 0;
 
-        OverridePatch patch = patchesByItemId.get(nItem);
-        if (patch == null) return false;
-
-        int wantRev = patchRevision.getOrDefault(nItem, 0);
-        int haveRev = resolvedRevision.getOrDefault(nItem, -1);
-
-        // If we already built this exact revision, no work needed.
-        if (resolvedByItemId.containsKey(nItem) && haveRev == wantRev) {
-            return true;
-        }
-
-        // Determine base definition id (UseDefinition required here)
-        String useDef = (patch.useDefinition != null) ? ItemIdUtil.normalizeItemId(patch.useDefinition) : null;
-
-        // If UseDefinition missing, try shorthand fallback
-        if (useDef == null || useDef.isBlank()) {
-            useDef = overrideUseDefinition.get(nItem);
-        }
-
-        if (useDef == null || useDef.isBlank()) {
-            System.out.println("[WeaponRegistry] ensureRegistered failed: no UseDefinition for item=" + nItem);
-            return false;
-        }
-
-        WeaponDefinition base = byItemId.get(useDef);
-        if (base == null) {
-            System.out.println("[WeaponRegistry] ensureRegistered failed: missing base definition useDef=" + useDef + " for item=" + nItem);
-            return false;
-        }
-
-        // Clone base into a new resolved definition bound to this itemId
-        WeaponDefinition resolved = cloneDefinitionForItem(base, nItem);
-
-        // Apply patch overwrites AFTER cloning (as you requested)
-        if (patch.abilityBar != null && !patch.abilityBar.isBlank()) {
-            resolved.AbilityBar = patch.abilityBar;
-        }
-
-        if (patch.slotOverrides != null && !patch.slotOverrides.isEmpty()) {
-            applySlotOverrides(resolved, patch.slotOverrides);
-        }
-
-        // Cache
-        resolvedByItemId.put(nItem, resolved);
-        resolvedRevision.put(nItem, wantRev);
-
-        System.out.println("[WeaponRegistry] Patched resolve: item=" + nItem + " useDef=" + useDef + " rev=" + wantRev);
-        return true;
-    }
-
-    private void bumpPatchRevision(String itemId) {
-        int next = patchRevision.getOrDefault(itemId, 0) + 1;
-        patchRevision.put(itemId, next);
-        // do NOT clear resolved here; revision mismatch will force rebuild
-    }
-
-    // ==========================================
-    // OverrideList merge
-    // ==========================================
-
-    private void mergeOverrideList(List<JsonObject> overrideList, String sourceTag) {
-        for (JsonObject o : overrideList) {
-            if (o == null) continue;
+        for (JsonElement el : overrideList) {
+            if (el == null || !el.isJsonObject()) continue;
+            JsonObject o = el.getAsJsonObject();
 
             String itemId = ItemIdUtil.normalizeItemId(getString(o, "ItemId"));
             if (itemId == null || itemId.isBlank()) continue;
 
             String useDef = ItemIdUtil.normalizeItemId(getString(o, "UseDefinition"));
-            String abilityBar = getString(o, "AbilityBar");
-
-            // If UseDefinition is omitted in OverrideList, allow fallback to shorthand map
             if (useDef == null || useDef.isBlank()) {
+                // fallback to shorthand override map
                 useDef = overrideUseDefinition.get(itemId);
             }
 
             if (useDef == null || useDef.isBlank()) {
-                System.out.println("[WeaponRegistry] OverrideList missing UseDefinition and no Overrides fallback for ItemId=" + itemId + " from " + sourceTag);
+                System.out.println("[WeaponRegistry] OverrideList entry missing UseDefinition and no fallback Override for ItemId=" + itemId);
                 continue;
             }
 
-            OverridePatch p = patchesByItemId.get(itemId);
-            if (p == null) p = new OverridePatch();
+            String abilityBar = getString(o, "AbilityBar");
 
+            OverridePatch p = new OverridePatch();
+            p.itemId = itemId;
+            p.useDefinition = useDef;
+            p.abilityBar = abilityBar;
+
+            // slot overrides
+            JsonObject so = (o.get("SlotOverrides") != null && o.get("SlotOverrides").isJsonObject())
+                    ? o.getAsJsonObject("SlotOverrides")
+                    : null;
+
+            if (so != null) {
+                p.slotOverrides = new HashMap<>();
+                for (Map.Entry<String, JsonElement> se : so.entrySet()) {
+                    int idx1to9;
+                    try { idx1to9 = Integer.parseInt(se.getKey().trim()); }
+                    catch (Throwable t) { continue; }
+
+                    if (idx1to9 < 1 || idx1to9 > 9) continue;
+                    if (!se.getValue().isJsonObject()) continue;
+
+                    JsonObject spObj = se.getValue().getAsJsonObject();
+                    SlotPatch sp = new SlotPatch();
+
+                    sp.Key = getString(spObj, "Key");
+                    sp.RootInteraction = getString(spObj, "RootInteraction");
+                    sp.ID = getString(spObj, "ID");
+                    sp.Icon = getString(spObj, "Icon");
+
+                    sp.Plugin = getNullableBoolean(spObj, "Plugin");
+                    sp.Consume = getNullableBoolean(spObj, "Consume");
+
+                    sp.MaxUses = getNullableInt(spObj, "MaxUses");
+                    sp.PowerMultiplier = getNullableFloat(spObj, "PowerMultiplier");
+                    sp.AbilityValue = getNullableInt(spObj, "AbilityValue");
+
+                    p.slotOverrides.put(idx1to9, sp);
+                }
+            }
+
+            // store shorthand too so it behaves like Overrides
+            overrideUseDefinition.put(itemId, useDef);
+
+            // last writer wins (load order)
+            overridePatches.put(itemId, p);
+            added++;
+        }
+
+        System.out.println("[WeaponRegistry] OverrideList merged=" + added + " from " + sourceTag);
+    }
+
+    public void registerOverrideList(List<JsonObject> overrideList, String sourceTag) {
+        if (overrideList == null || overrideList.isEmpty()) return;
+
+        for (JsonObject o : overrideList) {
+            if (o == null) continue;
+
+            String itemId = ItemIdUtil.normalizeItemId(getString(o, "ItemId"));
+            String useDef = ItemIdUtil.normalizeItemId(getString(o, "UseDefinition"));
+            String abilityBar = getString(o, "AbilityBar");
+
+            if (itemId == null || itemId.isBlank()) continue;
+
+            if (useDef == null || useDef.isBlank()) {
+                useDef = overrideUseDefinition.get(itemId);
+            }
+            if (useDef == null || useDef.isBlank()) continue;
+
+            OverridePatch p = new OverridePatch();
             p.itemId = itemId;
             p.useDefinition = useDef;
             p.abilityBar = abilityBar;
@@ -324,48 +224,42 @@ public class WeaponRegistry {
                 }
             }
 
-            // Also update shorthand map so it behaves like Overrides too
             overrideUseDefinition.put(itemId, useDef);
-
-            // Last loaded wins (overwrite existing patch object)
-            patchesByItemId.put(itemId, p);
-
-            bumpPatchRevision(itemId);
-
-            System.out.println("[WeaponRegistry] OverrideList merged: item=" + itemId + " useDef=" + useDef + " from " + sourceTag);
+            overridePatches.put(itemId, p); // ✅ fixed (was overrides.put)
         }
+
+        System.out.println("[WeaponRegistry] OverrideList merged (" + overrideList.size() + ") from " + sourceTag);
     }
 
-    // ==========================================
-    // Index loading
-    // ==========================================
-
-    private void loadIndexRecursiveFromLoader(ClassLoader loader, String indexPath, Set<String> visited, String sourceTag) {
-        if (loader == null) return;
-        if (visited == null) return;
+    // Must exist (AbilityReceiver calls it)
+    public boolean registerIndexFromAccess(
+            AbilityReceiver.ResourceAccess access,
+            String indexPath,
+            Set<String> visited,
+            String sourceTag
+    ) {
+        if (access == null) return false;
+        if (indexPath == null || indexPath.isBlank()) return false;
+        if (visited == null) return false;
 
         String normalized = normalizePath(indexPath);
         String visitKey = sourceTag + "::" + normalized;
-        if (!visited.add(visitKey)) return;
+        if (!visited.add(visitKey)) return true;
 
-        JsonObject obj = readJsonObjectFromLoader(loader, normalized);
-        if (obj == null) {
-            System.out.println("[WeaponRegistry] Missing/invalid index: " + normalized + " from " + sourceTag);
-            return;
-        }
+        JsonObject obj = readJsonObject(access, normalized);
+        if (obj == null) return false;
 
         WeaponIndex idx = gson.fromJson(obj, WeaponIndex.class);
-        if (idx == null) return;
+        if (idx == null) return false;
 
         if (idx.Includes != null) {
             for (String p : idx.Includes) {
                 if (p == null || p.isBlank()) continue;
                 String np = normalizePath(p);
-
                 if (np.endsWith("index.json")) {
-                    loadIndexRecursiveFromLoader(loader, np, visited, sourceTag);
+                    registerIndexFromAccess(access, np, visited, sourceTag);
                 } else {
-                    loadWeaponDefFromLoader(loader, np, sourceTag);
+                    registerWeaponDefFromAccess(access, np, sourceTag);
                 }
             }
         }
@@ -373,30 +267,67 @@ public class WeaponRegistry {
         if (idx.Weapons != null) {
             for (String p : idx.Weapons) {
                 if (p == null || p.isBlank()) continue;
-                loadWeaponDefFromLoader(loader, normalizePath(p), sourceTag);
+                registerWeaponDefFromAccess(access, normalizePath(p), sourceTag);
             }
         }
+
+        return true;
     }
 
-    private void loadWeaponDefFromLoader(ClassLoader loader, String weaponPath, String sourceTag) {
+    private void registerWeaponDefFromAccess(AbilityReceiver.ResourceAccess access, String weaponPath, String sourceTag) {
         String normalized = normalizePath(weaponPath);
 
-        JsonObject obj = readJsonObjectFromLoader(loader, normalized);
-        if (obj == null) {
-            System.out.println("[WeaponRegistry] Missing/invalid weapon json: " + normalized + " from " + sourceTag);
-            return;
-        }
+        JsonObject obj = readJsonObject(access, normalized);
+        if (obj == null) return;
 
         WeaponDefinition def = parseWeaponDefinition(obj);
-        if (def == null || def.ItemId == null || def.ItemId.isBlank()) {
-            System.out.println("[WeaponRegistry] Weapon missing ItemId: " + normalized + " from " + sourceTag);
-            return;
-        }
+        if (def == null || def.ItemId == null || def.ItemId.isBlank()) return;
 
         String key = ItemIdUtil.normalizeItemId(def.ItemId);
         def.ItemId = key;
         byItemId.put(key, def);
     }
+
+    // ----------------------------
+    // Runtime resolution (patch cloning)
+    // ----------------------------
+
+    public boolean ensureRegistered(String itemId) {
+        if (itemId == null || itemId.isBlank()) return false;
+        String nItem = ItemIdUtil.normalizeItemId(itemId);
+
+        if (byItemId.containsKey(nItem)) return true;
+
+        OverridePatch patch = overridePatches.get(nItem);
+        if (patch == null) return false;
+
+        String useDef = (patch.useDefinition != null) ? ItemIdUtil.normalizeItemId(patch.useDefinition) : null;
+        if (useDef == null || useDef.isBlank()) return false;
+
+        WeaponDefinition base = byItemId.get(useDef);
+        if (base == null) {
+            System.out.println("[WeaponRegistry] Override refers to missing UseDefinition=" + useDef + " for ItemId=" + nItem);
+            return false;
+        }
+
+        WeaponDefinition resolved = cloneDefinitionForItem(base, nItem);
+
+        if (patch.abilityBar != null && !patch.abilityBar.isBlank()) {
+            resolved.AbilityBar = patch.abilityBar;
+        }
+
+        if (patch.slotOverrides != null && !patch.slotOverrides.isEmpty()) {
+            applySlotOverrides(resolved, patch.slotOverrides);
+        }
+
+        byItemId.put(nItem, resolved);
+        System.out.println("[WeaponRegistry] Override-registered: " + nItem + " => " + useDef);
+        return true;
+    }
+
+    // ----------------------------
+    // Parsing
+    // ----------------------------
 
     private WeaponDefinition parseWeaponDefinition(JsonObject obj) {
         WeaponDefinition def = new WeaponDefinition();
@@ -421,6 +352,7 @@ public class WeaponRegistry {
                 slot.Icon = getString(sObj, "Icon");
                 slot.AbilityValue = getInt(sObj, "AbilityValue", 0);
                 slot.Consume = getBooleanLenient(sObj, "Consume");
+
                 slots.add(slot);
             }
         }
@@ -429,9 +361,9 @@ public class WeaponRegistry {
         return def;
     }
 
-    // ==========================================
-    // Slot patch application
-    // ==========================================
+    // ----------------------------
+    // Slot override application
+    // ----------------------------
 
     private static void applySlotOverrides(WeaponDefinition def, Map<Integer, SlotPatch> slotOverrides) {
         if (def == null) return;
@@ -474,9 +406,7 @@ public class WeaponRegistry {
 
         List<WeaponAbilitySlot> out = new ArrayList<>();
         if (base.AbilitySlots != null) {
-            for (WeaponAbilitySlot s : base.AbilitySlots) {
-                out.add(cloneSlot(s));
-            }
+            for (WeaponAbilitySlot s : base.AbilitySlots) out.add(cloneSlot(s));
         }
         d.AbilitySlots = out;
         return d;
@@ -499,15 +429,13 @@ public class WeaponRegistry {
         return c;
     }
 
-    // ==========================================
-    // JSON helpers
-    // ==========================================
+    // ----------------------------
+    // JSON reading helpers
+    // ----------------------------
 
-    private JsonObject readJsonObjectFromLoader(ClassLoader loader, String resourcePath) {
-        if (loader == null) return null;
-
-        String normalized = normalizePath(resourcePath);
-        InputStream is = loader.getResourceAsStream(normalized);
+    private JsonObject readJsonObject(AbilityReceiver.ResourceAccess access, String resourcePath) {
+        if (access == null) return null;
+        InputStream is = access.open(resourcePath);
         if (is == null) return null;
 
         try (InputStreamReader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
@@ -515,13 +443,11 @@ public class WeaponRegistry {
             if (!el.isJsonObject()) return null;
             return el.getAsJsonObject();
         } catch (Throwable t) {
-            System.out.println("[WeaponRegistry] Failed to read " + normalized + " : " + t.getMessage());
             return null;
         }
     }
 
     private static String normalizePath(String p) {
-        if (p == null) return null;
         String s = p.replace("\\", "/").trim();
         while (s.startsWith("/")) s = s.substring(1);
         return s;
@@ -588,125 +514,10 @@ public class WeaponRegistry {
 
         return null;
     }
-    public void registerOverrideMap(Map<String, String> overridesMap, String sourceTag) {
-        if (overridesMap == null || overridesMap.isEmpty()) return;
 
-        for (var e : overridesMap.entrySet()) {
-            String itemId = e.getKey();
-            String useDef = e.getValue();
-            if (itemId == null || itemId.isBlank()) continue;
-            if (useDef == null || useDef.isBlank()) continue;
-
-            String nItem = ItemIdUtil.normalizeItemId(itemId);
-            String nDef  = ItemIdUtil.normalizeItemId(useDef);
-
-            overrideUseDefinition.put(nItem, nDef);
-
-            // Ensure a patch entry exists so ensureRegistered() can build a resolved def
-            OverridePatch p = patchesByItemId.get(nItem);
-            if (p == null) p = new OverridePatch();
-            p.itemId = nItem;
-            p.useDefinition = nDef;
-            patchesByItemId.put(nItem, p);
-
-            bumpPatchRevision(nItem);
-        }
-
-        System.out.println("[WeaponRegistry] Override map merged (" + overridesMap.size() + ") from " + sourceTag);
-    }
-
-    public void registerOverrideList(List<JsonObject> overrideList, String sourceTag) {
-        if (overrideList == null || overrideList.isEmpty()) return;
-        mergeOverrideList(overrideList, sourceTag);
-    }
-
-
-    public boolean registerIndexFromContributor(
-            ClassLoader contributorLoader,
-            String indexPath,
-            Set<String> visited,
-            String sourceTag
-    ) {
-        if (contributorLoader == null) return false;
-        if (indexPath == null || indexPath.isBlank()) return false;
-        if (visited == null) return false;
-
-        String normalized = normalizePath(indexPath);
-        String visitKey = sourceTag + "::" + normalized;
-        if (!visited.add(visitKey)) return true;
-
-        JsonObject obj = readJsonObjectFromLoader(contributorLoader, normalized);
-        if (obj == null) {
-            System.out.println("[WeaponRegistry] (Contributor) Missing/invalid index: " + normalized + " from " + sourceTag);
-            return false;
-        }
-
-        WeaponIndex idx = gson.fromJson(obj, WeaponIndex.class);
-        if (idx == null) return false;
-
-        if (idx.Includes != null) {
-            for (String p : idx.Includes) {
-                if (p == null || p.isBlank()) continue;
-                String np = normalizePath(p);
-
-                if (np.endsWith("index.json")) {
-                    registerIndexFromContributor(contributorLoader, np, visited, sourceTag);
-                } else {
-                    registerWeaponDefFromContributor(contributorLoader, np, sourceTag);
-                }
-            }
-        }
-
-        if (idx.Weapons != null) {
-            for (String p : idx.Weapons) {
-                if (p == null || p.isBlank()) continue;
-                registerWeaponDefFromContributor(contributorLoader, normalizePath(p), sourceTag);
-            }
-        }
-
-        return true;
-    }
-
-    private void registerWeaponDefFromContributor(ClassLoader contributorLoader, String weaponPath, String sourceTag) {
-        String normalized = normalizePath(weaponPath);
-
-        JsonObject obj = readJsonObjectFromLoader(contributorLoader, normalized);
-        if (obj == null) {
-            System.out.println("[WeaponRegistry] (Contributor) Missing/invalid weapon json: " + normalized + " from " + sourceTag);
-            return;
-        }
-
-        WeaponDefinition def = parseWeaponDefinition(obj);
-        if (def == null || def.ItemId == null || def.ItemId.isBlank()) {
-            System.out.println("[WeaponRegistry] (Contributor) Weapon missing ItemId: " + normalized + " from " + sourceTag);
-            return;
-        }
-
-        String key = ItemIdUtil.normalizeItemId(def.ItemId);
-        def.ItemId = key;
-        byItemId.put(key, def);
-
-        System.out.println("[WeaponRegistry] (Contributor) Registered: " + key + " slots=" +
-                ((def.AbilitySlots == null) ? 0 : def.AbilitySlots.size()) + " from " + sourceTag);
-    }
-
-
-    private static String safeString(JsonElement e) {
-        try { return e.getAsString(); } catch (Throwable ignored) { return null; }
-    }
-
-    private void clearAll() {
-        byItemId.clear();
-        resolvedByItemId.clear();
-        overrideUseDefinition.clear();
-        patchesByItemId.clear();
-        patchRevision.clear();
-        resolvedRevision.clear();
-    }
-
-    // ==========================================
-    // Models
-    // ==========================================
+    // ----------------------------
+    // Small models
+    // ----------------------------
 
     private static final class WeaponIndex {
         public List<String> Includes;
@@ -730,13 +541,5 @@ public class WeaponRegistry {
         Integer MaxUses;
         Float PowerMultiplier;
         Integer AbilityValue;
-    }
-
-
-    private static final class WeaponPack {
-        String Source;
-        List<String> Indexes;
-        Map<String, String> Overrides;
-        List<JsonObject> OverrideList;
     }
 }

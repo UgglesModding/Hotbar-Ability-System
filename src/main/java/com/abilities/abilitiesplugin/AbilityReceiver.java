@@ -2,234 +2,203 @@ package com.abilities.abilitiesplugin;
 
 import com.google.gson.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * Queue-first contribution receiver.
+ * Central receiver/queue for HCA packs.
  *
- * - registerContributionPack(): ALWAYS queues if Hotbar isn't active yet.
- * - activate(): Hotbar calls this during its own setup to load:
- *      1) its own pack first
- *      2) then every queued pack in receive order
- * - After activation, new packs apply immediately (but still in arrival order).
+ * Anyone can queue packs at any time.
+ * Hotbar calls activate(...) once during its setup to apply:
+ *   1) its own pack
+ *   2) queued packs in the order they arrived
  */
 public final class AbilityReceiver {
 
-    private static final Gson gson = new GsonBuilder().create();
+    // =========================
+    // Resource Access (pluggable)
+    // =========================
+    public interface ResourceAccess {
+        InputStream open(String resourcePath);
+    }
 
-    private static WeaponRegistry weaponRegistry;
-    private static boolean active = false;
+    public static final class ClassLoaderAccess implements ResourceAccess {
+        private final ClassLoader loader;
+        public ClassLoaderAccess(ClassLoader loader) { this.loader = loader; }
 
-    private static final List<PendingPack> pending = new ArrayList<>();
-    private static long seq = 0;
+        @Override
+        public InputStream open(String resourcePath) {
+            if (loader == null) return null;
+            return loader.getResourceAsStream(normalizePath(resourcePath));
+        }
+    }
 
-    private static final class PendingPack {
-        final long order;
-        final ClassLoader loader;
-        final byte[] jsonBytes;
+    // =========================
+    // Internal queue
+    // =========================
+    private static final class QueuedPack {
+        final ResourceAccess access;
+        final byte[] packBytes;
         final String sourceTag;
 
-        PendingPack(long order, ClassLoader loader, byte[] jsonBytes, String sourceTag) {
-            this.order = order;
-            this.loader = loader;
-            this.jsonBytes = jsonBytes;
+        QueuedPack(ResourceAccess access, byte[] packBytes, String sourceTag) {
+            this.access = access;
+            this.packBytes = packBytes;
             this.sourceTag = sourceTag;
         }
     }
 
+    private static final List<QueuedPack> queue = new ArrayList<>();
+    private static WeaponRegistry weaponRegistry;
+
     private AbilityReceiver() {}
 
-    /**
-     * Hotbar calls this in its setup().
-     * Loads Hotbar's own pack FIRST, then flushes all queued packs in order.
-     */
+    // =========================
+    // Queue API
+    // =========================
+    public static synchronized boolean queuePack(ResourceAccess access, byte[] packJsonBytes, String sourceTag) {
+        if (access == null) return false;
+        if (packJsonBytes == null || packJsonBytes.length == 0) return false;
+        if (sourceTag == null || sourceTag.isBlank()) sourceTag = "UnknownSource";
+
+        queue.add(new QueuedPack(access, packJsonBytes, sourceTag));
+        System.out.println("[AbilityReceiver] Queued pack from " + sourceTag + " bytes=" + packJsonBytes.length);
+        return true;
+    }
+
+    public static synchronized boolean queuePack(ClassLoader contributorLoader, InputStream packJsonStream, String sourceTag) {
+        if (contributorLoader == null || packJsonStream == null) return false;
+        try {
+            byte[] bytes = packJsonStream.readAllBytes();
+            return queuePack(new ClassLoaderAccess(contributorLoader), bytes, sourceTag);
+        } catch (Throwable t) {
+            System.out.println("[AbilityReceiver] queuePack(stream) failed from " + sourceTag + " : " + t.getMessage());
+            return false;
+        }
+    }
+
+    // =========================
+    // Activation (Hotbar calls once)
+    // =========================
     public static synchronized boolean activate(
             WeaponRegistry registry,
             ClassLoader hotbarLoader,
             InputStream hotbarPackStream,
             String hotbarSourceTag
     ) {
-        if (registry == null) {
-            System.out.println("[AbilityReceiver] activate() failed: registry is null");
-            return false;
-        }
+        if (registry == null) return false;
+        if (hotbarLoader == null) return false;
+        if (hotbarPackStream == null) return false;
 
         weaponRegistry = registry;
 
-        if (active) {
-            // Already active: just apply the hotbar pack if provided
-            if (hotbarPackStream != null) {
-                try {
-                    byte[] bytes = readAllBytes(hotbarPackStream);
-                    applyPackBytes(hotbarLoader, bytes, hotbarSourceTag);
-                    System.out.println("[AbilityReceiver] activate(): applied hotbar pack again (already active)");
-                } catch (Throwable t) {
-                    System.out.println("[AbilityReceiver] activate(): failed applying hotbar pack: " + t.getMessage());
-                    return false;
-                }
-            }
-            return true;
+        ResourceAccess hotbarAccess = new ClassLoaderAccess(hotbarLoader);
+
+        byte[] hotbarPackBytes;
+        try {
+            hotbarPackBytes = hotbarPackStream.readAllBytes();
+        } catch (Throwable t) {
+            System.out.println("[AbilityReceiver] Failed reading hotbar pack bytes: " + t.getMessage());
+            return false;
         }
 
-        // 1) Apply Hotbar's own pack first
-        if (hotbarPackStream != null) {
-            try {
-                byte[] bytes = readAllBytes(hotbarPackStream);
-                applyPackBytes(hotbarLoader, bytes, hotbarSourceTag);
-                System.out.println("[AbilityReceiver] activate(): applied hotbar pack");
-            } catch (Throwable t) {
-                System.out.println("[AbilityReceiver] activate(): failed applying hotbar pack: " + t.getMessage());
-                return false;
-            }
-        } else {
-            System.out.println("[AbilityReceiver] activate(): hotbar pack stream was null");
+        // 1) Apply Hotbar pack first
+        String tag = (hotbarSourceTag == null || hotbarSourceTag.isBlank()) ? "HotbarAbilities" : hotbarSourceTag;
+        boolean okHotbar = applyPackBytes(hotbarAccess, hotbarPackBytes, tag);
+
+        // 2) Apply queued packs in arrival order
+        int applied = 0;
+        for (QueuedPack p : queue) {
+            if (p == null) continue;
+            boolean ok = applyPackBytes(p.access, p.packBytes, p.sourceTag);
+            if (ok) applied++;
         }
 
-        // 2) Mark active
-        active = true;
+        System.out.println("[AbilityReceiver] Activated. hotbarOk=" + okHotbar
+                + " queuedApplied=" + applied + " queuedTotal=" + queue.size());
 
-        // 3) Flush pending packs in the order they arrived
-        if (!pending.isEmpty()) {
-            pending.sort(Comparator.comparingLong(p -> p.order));
-            System.out.println("[AbilityReceiver] activate(): flushing queued packs=" + pending.size());
+        // Optional: clear so re-activate doesn't double-apply
+        queue.clear();
 
-            for (PendingPack p : pending) {
-                try {
-                    applyPackBytes(p.loader, p.jsonBytes, p.sourceTag);
-                } catch (Throwable t) {
-                    System.out.println("[AbilityReceiver] Failed flushing pack " + p.sourceTag + ": " + t.getMessage());
-                }
+        return okHotbar;
+    }
+
+    // =========================
+    // Pack parsing & apply
+    // =========================
+    private static boolean applyPackBytes(ResourceAccess access, byte[] packBytes, String sourceTag) {
+        if (weaponRegistry == null) return false;
+        if (access == null) return false;
+        if (packBytes == null || packBytes.length == 0) return false;
+
+        JsonObject root;
+        try (InputStreamReader r = new InputStreamReader(new ByteArrayInputStream(packBytes), StandardCharsets.UTF_8)) {
+            JsonElement el = JsonParser.parseReader(r);
+            if (el == null || !el.isJsonObject()) return false;
+            root = el.getAsJsonObject();
+        } catch (Throwable t) {
+            System.out.println("[AbilityReceiver] Invalid pack JSON from " + sourceTag + " : " + t.getMessage());
+            return false;
+        }
+
+        // ---- Overrides (shorthand) ----
+        JsonObject overridesObj = (root.get("Overrides") != null && root.get("Overrides").isJsonObject())
+                ? root.getAsJsonObject("Overrides")
+                : null;
+
+        if (overridesObj != null) {
+            Map<String, String> map = new HashMap<>();
+            for (Map.Entry<String, JsonElement> e : overridesObj.entrySet()) {
+                String itemId = e.getKey();
+                String useDef = null;
+                try { useDef = e.getValue().getAsString(); } catch (Throwable ignored) {}
+
+                if (itemId == null || itemId.isBlank()) continue;
+                if (useDef == null || useDef.isBlank()) continue;
+                map.put(itemId, useDef);
             }
+            if (!map.isEmpty()) weaponRegistry.registerOverrideMap(map, sourceTag);
+        }
 
-            pending.clear();
+        // ---- OverrideList (patches) ----
+        JsonArray overrideListArr = (root.get("OverrideList") != null && root.get("OverrideList").isJsonArray())
+                ? root.getAsJsonArray("OverrideList")
+                : null;
+
+        if (overrideListArr != null && overrideListArr.size() > 0) {
+            List<JsonObject> list = new ArrayList<>();
+            for (JsonElement e : overrideListArr) {
+                if (e != null && e.isJsonObject()) list.add(e.getAsJsonObject());
+            }
+            if (!list.isEmpty()) weaponRegistry.registerOverrideList(list, sourceTag);
+        }
+
+        // ---- Indexes (weapon defs) ----
+        JsonArray indexesArr = (root.get("Indexes") != null && root.get("Indexes").isJsonArray())
+                ? root.getAsJsonArray("Indexes")
+                : null;
+
+        if (indexesArr != null && indexesArr.size() > 0) {
+            Set<String> visited = new HashSet<>();
+            for (JsonElement idxEl : indexesArr) {
+                if (idxEl == null || idxEl.isJsonNull()) continue;
+                String idxPath = null;
+                try { idxPath = idxEl.getAsString(); } catch (Throwable ignored) {}
+                if (idxPath == null || idxPath.isBlank()) continue;
+
+                weaponRegistry.registerIndexFromAccess(access, normalizePath(idxPath), visited, sourceTag);
+            }
         }
 
         return true;
-    }
-
-    /**
-     * Mods call this at any time.
-     * If Hotbar isn't active yet -> queue.
-     * If Hotbar is active -> apply immediately.
-     */
-    public static synchronized boolean registerContributionPack(
-            ClassLoader contributorLoader,
-            InputStream packJsonStream,
-            String sourceTag
-    ) {
-        if (contributorLoader == null || packJsonStream == null) return false;
-        if (sourceTag == null || sourceTag.isBlank()) sourceTag = "Unknown";
-
-        try {
-            byte[] bytes = readAllBytes(packJsonStream);
-
-            if (!active || weaponRegistry == null) {
-                pending.add(new PendingPack(++seq, contributorLoader, bytes, sourceTag));
-                System.out.println("[AbilityReceiver] queued pack from " + sourceTag + " (active=" + active + ")");
-                return true;
-            }
-
-            // Active -> apply now
-            applyPackBytes(contributorLoader, bytes, sourceTag);
-            System.out.println("[AbilityReceiver] applied pack immediately from " + sourceTag);
-            return true;
-
-        } catch (Throwable t) {
-            System.out.println("[AbilityReceiver] Failed pack from " + sourceTag + " : " + t.getMessage());
-            return false;
-        }
-    }
-
-    // ============================
-    // Actual pack application
-    // ============================
-
-    private static void applyPackBytes(ClassLoader loader, byte[] jsonBytes, String sourceTag) throws Exception {
-        try (InputStream is = new ByteArrayInputStream(jsonBytes);
-             InputStreamReader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-
-            JsonElement el = JsonParser.parseReader(r);
-            if (!el.isJsonObject()) return;
-
-            JsonObject root = el.getAsJsonObject();
-
-            // ---- Overrides ----
-            JsonObject overridesObj = root.getAsJsonObject("Overrides");
-            if (overridesObj != null) {
-                Map<String, String> map = new HashMap<>();
-                for (String key : overridesObj.keySet()) {
-                    JsonElement v = overridesObj.get(key);
-                    if (v == null || v.isJsonNull()) continue;
-
-                    String useDef;
-                    try { useDef = v.getAsString(); }
-                    catch (Throwable ignored) { continue; }
-
-                    if (key == null || key.isBlank()) continue;
-                    if (useDef == null || useDef.isBlank()) continue;
-
-                    map.put(key, useDef);
-                }
-
-                if (!map.isEmpty()) {
-                    weaponRegistry.registerOverrideMap(map, sourceTag);
-                    System.out.println("[AbilityReceiver] Overrides merged=" + map.size() + " from " + sourceTag);
-                }
-            }
-
-            // ---- Indexes ----
-            JsonArray indexesArr = root.getAsJsonArray("Indexes");
-            if (indexesArr != null && indexesArr.size() > 0) {
-                Set<String> visited = new HashSet<>();
-                int countIndexes = 0;
-
-                for (JsonElement idxEl : indexesArr) {
-                    if (idxEl == null || idxEl.isJsonNull()) continue;
-
-                    String idxPath;
-                    try { idxPath = idxEl.getAsString(); }
-                    catch (Throwable ignored) { continue; }
-
-                    if (idxPath == null || idxPath.isBlank()) continue;
-
-                    idxPath = normalizePath(idxPath);
-                    boolean ok = weaponRegistry.registerIndexFromContributor(loader, idxPath, visited, sourceTag);
-                    if (ok) countIndexes++;
-                }
-
-                System.out.println("[AbilityReceiver] Indexes processed=" + countIndexes + " from " + sourceTag);
-            }
-
-            // ---- OverrideList ----
-            JsonArray overrideListArr = root.getAsJsonArray("OverrideList");
-            if (overrideListArr != null && overrideListArr.size() > 0) {
-                List<JsonObject> list = new ArrayList<>();
-                for (JsonElement oEl : overrideListArr) {
-                    if (oEl == null || !oEl.isJsonObject()) continue;
-                    list.add(oEl.getAsJsonObject());
-                }
-
-                if (!list.isEmpty()) {
-                    weaponRegistry.registerOverrideList(list, sourceTag);
-                    System.out.println("[AbilityReceiver] OverrideList merged=" + list.size() + " from " + sourceTag);
-                }
-            }
-        }
     }
 
     private static String normalizePath(String p) {
         String s = p.replace("\\", "/").trim();
         while (s.startsWith("/")) s = s.substring(1);
         return s;
-    }
-
-    private static byte[] readAllBytes(InputStream in) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buf = new byte[8192];
-        int r;
-        while ((r = in.read(buf)) != -1) baos.write(buf, 0, r);
-        return baos.toByteArray();
     }
 }
