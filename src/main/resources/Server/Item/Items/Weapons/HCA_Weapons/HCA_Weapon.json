@@ -37,10 +37,11 @@
       "ID": "combat_abilities:empty"
     },
     {
-      "Key": "Ability_Empty",
+      "Key": "Ability_Staff_Flight",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
+      "ID": "combat_abilities:staff_flight",
+      "RootInteraction": "StaffFlight"
     },
     {
       "Key": "Ability_CoinFlip",
