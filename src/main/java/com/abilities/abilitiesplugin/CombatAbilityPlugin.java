@@ -30,7 +30,11 @@ public class CombatAbilityPlugin extends JavaPlugin {
         AbilityInteractionExecutor interactionExecutor = new AbilityInteractionExecutor();
         AbilitySystem abilitySystem = new AbilitySystem(weaponRegistry, state, interactionExecutor);
 
-        AbilityDispatch.register(new HCA_DoAbility());
+        HcaExternalExecutorChain chain = new HcaExternalExecutorChain();
+        chain.discover();
+
+        AbilityDispatch.register(new HCA_DoAbility(chain));
+
 
         // Commands
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
