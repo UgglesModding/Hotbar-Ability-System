@@ -2,6 +2,7 @@ package com.abilities.abilitiesplugin;
 
 import com.google.gson.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -233,7 +234,7 @@ public class WeaponRegistry {
 
     // Must exist (AbilityReceiver calls it)
     public boolean registerIndexFromAccess(
-            AbilityReceiver.ResourceAccess access,
+            ModPackScanner.ResourceAccess access,
             String indexPath,
             Set<String> visited,
             String sourceTag
@@ -274,7 +275,8 @@ public class WeaponRegistry {
         return true;
     }
 
-    private void registerWeaponDefFromAccess(AbilityReceiver.ResourceAccess access, String weaponPath, String sourceTag) {
+    private void registerWeaponDefFromAccess(ModPackScanner.ResourceAccess access, String weaponPath, String sourceTag)
+    {
         String normalized = normalizePath(weaponPath);
 
         JsonObject obj = readJsonObject(access, normalized);
@@ -433,15 +435,19 @@ public class WeaponRegistry {
     // JSON reading helpers
     // ----------------------------
 
-    private JsonObject readJsonObject(AbilityReceiver.ResourceAccess access, String resourcePath) {
+    private JsonObject readJsonObject(ModPackScanner.ResourceAccess access, String resourcePath) {
         if (access == null) return null;
-        InputStream is = access.open(resourcePath);
-        if (is == null) return null;
 
-        try (InputStreamReader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-            JsonElement el = JsonParser.parseReader(r);
-            if (!el.isJsonObject()) return null;
-            return el.getAsJsonObject();
+        try (InputStream is = access.open(resourcePath)) {
+            if (is == null) return null;
+
+            try (InputStreamReader r = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+                JsonElement el = JsonParser.parseReader(r);
+                if (el == null || !el.isJsonObject()) return null;
+                return el.getAsJsonObject();
+            }
+        } catch (IOException e) {
+            return null;
         } catch (Throwable t) {
             return null;
         }

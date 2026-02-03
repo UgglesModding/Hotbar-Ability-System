@@ -1,57 +1,211 @@
 package com.abilities.abilitiesplugin;
 
+import com.google.gson.*;
+
+import com.hypixel.hytale.server.core.plugin.PluginManager;
+
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Scans the /mods folder for jar files that contain HCA pack(s),
- * e.g. HCA/HCA_pack.json or HCA/*_hca_pack.json
+ * Single-source pack loader:
+ * - applies Hotbar's own pack first
+ * - loads packs from every plugin's dataDir/hca/*.json
+ * - optionally loads packs from mods folder jar files (HCA/*.json)
  *
- * Then queues them into AbilityReceiver BEFORE Hotbar activates,
- * so they apply in deterministic order.
+ * Packs are applied directly to WeaponRegistry (no queue).
  */
 public final class ModPackScanner {
 
+    private static final Gson GSON = new GsonBuilder().create();
+
     private ModPackScanner() {}
 
-    public static void scanModsFolderAndQueuePacks(Path modsDir) {
-        if (modsDir == null) return;
+    // -----------------------------
+    // Resource access abstraction
+    // -----------------------------
+    public interface ResourceAccess {
+        InputStream open(String resourcePath) throws IOException;
+    }
 
-        if (!Files.exists(modsDir) || !Files.isDirectory(modsDir)) {
-            System.out.println("[HCA] ModPackScanner: mods dir not found: " + modsDir);
-            return;
+    /** Reads resources from a ClassLoader (for Hotbar's built-in pack & jar-based scanning). */
+    public static final class ClassLoaderAccess implements ResourceAccess {
+        private final ClassLoader loader;
+        public ClassLoaderAccess(ClassLoader loader) { this.loader = loader; }
+
+        @Override
+        public InputStream open(String resourcePath) {
+            if (loader == null) return null;
+            return loader.getResourceAsStream(normalizePath(resourcePath));
         }
+    }
 
-        List<Path> jars = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "*.jar")) {
-            for (Path p : stream) jars.add(p);
+    /** Reads files from disk relative to a root folder. */
+    public static final class FileSystemAccess implements ResourceAccess {
+        private final Path root;
+        public FileSystemAccess(Path root) { this.root = root; }
+
+        @Override
+        public InputStream open(String resourcePath) throws IOException {
+            if (root == null) return null;
+            String rel = normalizePath(resourcePath);
+            Path p = root.resolve(rel).normalize();
+            if (!Files.exists(p) || Files.isDirectory(p)) return null;
+            return Files.newInputStream(p);
+        }
+    }
+
+    /** Reads entries from a jar/zip. */
+    public static final class ZipResourceAccess implements ResourceAccess {
+        private final Path jarPath;
+        public ZipResourceAccess(Path jarPath) { this.jarPath = jarPath; }
+
+        @Override
+        public InputStream open(String resourcePath) throws IOException {
+            String p = normalizePath(resourcePath);
+            ZipFile zip = new ZipFile(jarPath.toFile());
+            ZipEntry e = zip.getEntry(p);
+            if (e == null) {
+                zip.close();
+                return null;
+            }
+
+            InputStream raw = zip.getInputStream(e);
+            return new FilterInputStream(raw) {
+                @Override public void close() throws IOException {
+                    super.close();
+                    zip.close();
+                }
+            };
+        }
+    }
+
+    // -----------------------------
+    // Public entry point
+    // -----------------------------
+    public static void loadAllPacks(
+            WeaponRegistry weaponRegistry,
+            ClassLoader hotbarLoader
+    ) {
+        if (weaponRegistry == null) return;
+        if (hotbarLoader == null) return;
+
+        int applied = 0;
+
+        // 1) Apply Hotbar's own pack first (resource inside Hotbars jar)
+        applied += applyHotbarPack(weaponRegistry, hotbarLoader);
+
+        // 2) Apply packs from plugin data dirs: <dataDir>/hca/*.json
+        applied += applyPluginDataDirPacks(weaponRegistry);
+
+        // 3) Optional legacy: scan mods folder jars for HCA/*.json packs
+        applied += applyModsFolderJarPacks(weaponRegistry);
+
+        System.out.println("[HCA] ModPackScanner: total packs applied=" + applied);
+    }
+
+    // -----------------------------
+    // Step 1: Hotbar built-in pack
+    // -----------------------------
+    private static int applyHotbarPack(WeaponRegistry weaponRegistry, ClassLoader hotbarLoader) {
+        String path = "HCA/HCA_pack.json";
+        try (InputStream in = hotbarLoader.getResourceAsStream(path)) {
+            if (in == null) {
+                System.out.println("[HCA] Missing Hotbar pack resource: " + path);
+                return 0;
+            }
+            byte[] bytes = in.readAllBytes();
+            boolean ok = applyPackBytes(weaponRegistry, new ClassLoaderAccess(hotbarLoader), bytes, "HotbarAbilities");
+            System.out.println("[HCA] Hotbar pack applied=" + ok);
+            return ok ? 1 : 0;
         } catch (Throwable t) {
-            System.out.println("[HCA] ModPackScanner: failed listing mods dir: " + t.getMessage());
-            return;
+            System.out.println("[HCA] Failed reading Hotbar pack: " + t.getMessage());
+            return 0;
+        }
+    }
+
+    // -----------------------------
+    // Step 2: plugin data dirs
+    // -----------------------------
+    private static int applyPluginDataDirPacks(WeaponRegistry weaponRegistry) {
+        int applied = 0;
+
+        for (var plugin : PluginManager.get().getPlugins()) {
+            try {
+                Path dataDir = plugin.getDataDirectory();
+                if (dataDir == null) continue;
+
+                Path hcaDir = dataDir.resolve("hca");
+                if (!Files.isDirectory(hcaDir)) continue;
+
+                List<Path> jsonFiles = new ArrayList<>();
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(hcaDir, "*.json")) {
+                    for (Path p : ds) jsonFiles.add(p);
+                }
+
+                jsonFiles.sort(Comparator.comparing(
+                        p -> p.getFileName().toString().toLowerCase(Locale.ROOT)
+                ));
+
+                for (Path packPath : jsonFiles) {
+                    byte[] bytes = Files.readAllBytes(packPath);
+
+                    // Root = the plugin's HCA dir
+                    ResourceAccess access = new FileSystemAccess(hcaDir);
+
+                    String tag = plugin.getName() + ":dataDir:" + packPath.getFileName();
+                    boolean ok = applyPackBytes(weaponRegistry, access, bytes, tag);
+
+                    if (ok) applied++;
+
+                    System.out.println("[HCA] dataDir pack applied=" + ok + " tag=" + tag);
+                }
+            } catch (Throwable t) {
+                System.out.println("[HCA] dataDir scan error for " + plugin + ": " + t.getMessage());
+            }
         }
 
-        // stable order (so “load order” is deterministic)
-        jars.sort(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)));
+        return applied;
+    }
 
-        int queued = 0;
+    // -----------------------------
+    // Step 3: mods folder jar scan
+    // -----------------------------
+    private static int applyModsFolderJarPacks(WeaponRegistry weaponRegistry) {
+        Path modsDir = findModsDir();
+        if (modsDir == null) {
+            System.out.println("[HCA] mods folder not found; skipping jar scan");
+            return 0;
+        }
+
+        int applied = 0;
+        List<Path> jars = new ArrayList<>();
+
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(modsDir, "*.jar")) {
+            for (Path p : ds) jars.add(p);
+        } catch (Throwable t) {
+            System.out.println("[HCA] failed listing mods folder: " + t.getMessage());
+            return 0;
+        }
+
+        jars.sort(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)));
 
         for (Path jarPath : jars) {
             String jarName = jarPath.getFileName().toString();
-
             try (ZipFile zip = new ZipFile(jarPath.toFile())) {
 
-                // Collect candidate packs inside this jar
                 List<String> packEntries = new ArrayList<>();
 
-                // 1) standard name
+                // Standard pack name
                 if (zip.getEntry("HCA/HCA_pack.json") != null) {
                     packEntries.add("HCA/HCA_pack.json");
                 }
 
-                // 2) alternative names: HCA/*_hca_pack.json
+                // Alternate names: HCA/*_hca_pack.json
                 Enumeration<? extends ZipEntry> en = zip.entries();
                 while (en.hasMoreElements()) {
                     ZipEntry e = en.nextElement();
@@ -65,84 +219,140 @@ public final class ModPackScanner {
                     packEntries.add(n);
                 }
 
+                packEntries.sort(String.CASE_INSENSITIVE_ORDER);
+
                 if (packEntries.isEmpty()) continue;
 
-                // Queue each pack we found
+                ResourceAccess access = new ZipResourceAccess(jarPath);
+
                 for (String entryName : packEntries) {
                     ZipEntry entry = zip.getEntry(entryName);
                     if (entry == null) continue;
 
-                    byte[] bytes = readAllBytes(zip.getInputStream(entry));
-
-                    // ResourceAccess that can read any file inside THIS jar.
-                    AbilityReceiver.ResourceAccess access = new ZipResourceAccess(jarPath, bytes);
-
-                    // source tag = jar name + entry name (good for debugging)
-                    String sourceTag = jarName + "::" + entryName;
-
-                    boolean ok = AbilityReceiver.queuePack(access, bytes, sourceTag);
-                    if (ok) queued++;
-                }
-
-            } catch (Throwable t) {
-                System.out.println("[HCA] ModPackScanner: failed scanning " + jarName + " : " + t.getMessage());
-            }
-        }
-
-        System.out.println("[HCA] ModPackScanner: queued packs=" + queued);
-    }
-
-    private static byte[] readAllBytes(InputStream is) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[8192];
-            int r;
-            while ((r = is.read(buf)) >= 0) out.write(buf, 0, r);
-            return out.toByteArray();
-        }
-    }
-
-    /**
-     * ResourceAccess implementation that re-opens the jar when it needs to read index/weapon json.
-     * NOTE: stores jarPath only; does NOT keep ZipFile open.
-     */
-    private static final class ZipResourceAccess implements AbilityReceiver.ResourceAccess {
-        private final Path jarPath;
-        private final byte[] packBytes; // not used for reads, but handy if you want later
-
-        ZipResourceAccess(Path jarPath, byte[] packBytes) {
-            this.jarPath = jarPath;
-            this.packBytes = packBytes;
-        }
-
-        @Override
-        public InputStream open(String resourcePath) {
-            String p = normalize(resourcePath);
-            try {
-                ZipFile zip = new ZipFile(jarPath.toFile());
-                ZipEntry e = zip.getEntry(p);
-                if (e == null) {
-                    zip.close();
-                    return null;
-                }
-
-                // Wrap so closing the stream also closes the ZipFile.
-                InputStream raw = zip.getInputStream(e);
-                return new FilterInputStream(raw) {
-                    @Override public void close() throws IOException {
-                        super.close();
-                        zip.close();
+                    byte[] bytes;
+                    try (InputStream in = zip.getInputStream(entry)) {
+                        bytes = in.readAllBytes();
                     }
-                };
+
+                    String tag = jarName + "::" + entryName;
+                    boolean ok = applyPackBytes(weaponRegistry, access, bytes, tag);
+                    if (ok) applied++;
+
+                    System.out.println("[HCA] jar pack applied=" + ok + " tag=" + tag);
+                }
 
             } catch (Throwable t) {
-                return null;
+                System.out.println("[HCA] failed scanning jar " + jarName + ": " + t.getMessage());
             }
         }
 
-        private static String normalize(String p) {
-            String s = (p == null) ? "" : p.replace("\\", "/").trim();
-            while (s.startsWith("/")) s = s.substring(1);
-            return s;
+        return applied;
+    }
+
+    // -----------------------------
+    // Apply one pack to WeaponRegistry
+    // -----------------------------
+    private static boolean applyPackBytes(
+            WeaponRegistry weaponRegistry,
+            ResourceAccess access,
+            byte[] packBytes,
+            String sourceTag
+    ) {
+        if (weaponRegistry == null) return false;
+        if (access == null) return false;
+        if (packBytes == null || packBytes.length == 0) return false;
+
+        JsonObject root;
+        try (InputStreamReader r = new InputStreamReader(new ByteArrayInputStream(packBytes), StandardCharsets.UTF_8)) {
+            JsonElement el = JsonParser.parseReader(r);
+            if (el == null || !el.isJsonObject()) return false;
+            root = el.getAsJsonObject();
+        } catch (Throwable t) {
+            System.out.println("[HCA] invalid pack JSON from " + sourceTag + " : " + t.getMessage());
+            return false;
         }
+
+        // ---- Overrides ----
+        JsonObject overridesObj = (root.get("Overrides") != null && root.get("Overrides").isJsonObject())
+                ? root.getAsJsonObject("Overrides")
+                : null;
+
+        if (overridesObj != null) {
+            Map<String, String> map = new HashMap<>();
+            for (Map.Entry<String, JsonElement> e : overridesObj.entrySet()) {
+                String itemId = e.getKey();
+                String useDef = null;
+                try { useDef = e.getValue().getAsString(); } catch (Throwable ignored) {}
+
+                if (itemId == null || itemId.isBlank()) continue;
+                if (useDef == null || useDef.isBlank()) continue;
+                map.put(itemId, useDef);
+            }
+            if (!map.isEmpty()) weaponRegistry.registerOverrideMap(map, sourceTag);
+        }
+
+        // ---- OverrideList ----
+        JsonArray overrideListArr = (root.get("OverrideList") != null && root.get("OverrideList").isJsonArray())
+                ? root.getAsJsonArray("OverrideList")
+                : null;
+
+        if (overrideListArr != null && overrideListArr.size() > 0) {
+            List<JsonObject> list = new ArrayList<>();
+            for (JsonElement e : overrideListArr) {
+                if (e != null && e.isJsonObject()) list.add(e.getAsJsonObject());
+            }
+            if (!list.isEmpty()) weaponRegistry.registerOverrideList(list, sourceTag);
+        }
+
+        // ---- Indexes ----
+        JsonArray indexesArr = (root.get("Indexes") != null && root.get("Indexes").isJsonArray())
+                ? root.getAsJsonArray("Indexes")
+                : null;
+
+        if (indexesArr != null && indexesArr.size() > 0) {
+            Set<String> visited = new HashSet<>();
+            for (JsonElement idxEl : indexesArr) {
+                if (idxEl == null || idxEl.isJsonNull()) continue;
+                String idxPath = null;
+                try { idxPath = idxEl.getAsString(); } catch (Throwable ignored) {}
+                if (idxPath == null || idxPath.isBlank()) continue;
+
+                // NOTE: WeaponRegistry signature must use ModPackScanner.ResourceAccess now
+                weaponRegistry.registerIndexFromAccess(access, normalizePath(idxPath), visited, sourceTag);
+            }
+        }
+
+        return true;
+    }
+
+    // -----------------------------
+    // Mods dir finder
+    // -----------------------------
+    private static Path findModsDir() {
+        // If your API has MODS_PATH, prefer it:
+        try {
+            Path p = PluginManager.MODS_PATH;
+            if (p != null && Files.isDirectory(p)) return p;
+        } catch (Throwable ignored) {}
+
+        Path p1 = Paths.get("mods");
+        if (Files.isDirectory(p1)) return p1;
+
+        Path p2 = Paths.get("Server", "mods");
+        if (Files.isDirectory(p2)) return p2;
+
+        try {
+            Path cwd = Paths.get("").toAbsolutePath();
+            Path p3 = cwd.resolve("mods");
+            if (Files.isDirectory(p3)) return p3;
+        } catch (Throwable ignored) {}
+
+        return null;
+    }
+
+    private static String normalizePath(String p) {
+        String s = (p == null) ? "" : p.replace("\\", "/").trim();
+        while (s.startsWith("/")) s = s.substring(1);
+        return s;
     }
 }
