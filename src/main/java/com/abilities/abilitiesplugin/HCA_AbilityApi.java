@@ -21,7 +21,7 @@ import java.util.Random;
 public final class HCA_AbilityApi {
 
     private static AbilityHotbarState state; // set once from plugin setup
-    private static final Random rng = new Random();
+    static final Random rng = new Random();
 
     private HCA_AbilityApi() {
     }

@@ -11,9 +11,15 @@ import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntitySta
 
 import java.util.Random;
 
+import static com.abilities.abilitiesplugin.HCA_AbilityApi.rng;
+
 public class HCA_DoAbility implements IAbilityPlugin {
 
-    private static final Random rng = new Random();
+    private final HcaExternalExecutorChain externalChain;
+
+    public HCA_DoAbility(HcaExternalExecutorChain externalChain) {
+        this.externalChain = externalChain;
+    }
 
     @Override
     public boolean HCA_DoAbility(PackagedAbilityData Data, AbilityContext Context) {
@@ -53,9 +59,13 @@ public class HCA_DoAbility implements IAbilityPlugin {
                 return abilitySetMultiplicationPower(Data,Context);
 
             default:
+                if (externalChain != null) {
+                    return externalChain.tryExecute(Data, Context);
+                }
                 return false;
         }
     }
+
 
     // ----------------------------
     // Ability functions (one per case)
