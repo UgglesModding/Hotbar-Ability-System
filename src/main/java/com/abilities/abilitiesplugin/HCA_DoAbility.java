@@ -11,15 +11,14 @@ import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntitySta
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static com.abilities.abilitiesplugin.HCA_AbilityApi.rng;
 
 public class HCA_DoAbility implements IAbilityPlugin {
 
-    private final HcaExternalExecutorChain externalChain;
+    private final ExternalExecutorChain externalChain;
 
-    public HCA_DoAbility(HcaExternalExecutorChain externalChain) {
+    public HCA_DoAbility(ExternalExecutorChain externalChain) {
         this.externalChain = externalChain;
     }
 
@@ -110,11 +109,6 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
     private boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
-        if (HCA_AbilityApi.HasAbilityString(Context.PlayerRef, data.ID, "GrimoireToggle"))
-        {
-            return abilityLocalTeleportAxis(data, Context);
-        }
-
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         } // teleports the player in desired direction

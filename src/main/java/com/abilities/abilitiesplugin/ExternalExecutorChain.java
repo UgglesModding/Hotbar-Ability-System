@@ -5,18 +5,18 @@ import com.hypixel.hytale.server.core.plugin.PluginManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class HcaExternalExecutorChain {
+public final class ExternalExecutorChain {
 
-    private final List<IHcaExternalAbilityExecutor> executors = new ArrayList<>();
+    private final List<IExternalAbilityExecutor> executors = new ArrayList<>();
 
-    public HcaExternalExecutorChain() {}
+    public ExternalExecutorChain() {}
 
     public void discover() {
         executors.clear();
 
         PluginManager.get().getPlugins().forEach(plugin -> {
             // If the plugin itself implements the interface, register it.
-            if (plugin instanceof IHcaExternalAbilityExecutor exec) {
+            if (plugin instanceof IExternalAbilityExecutor exec) {
                 executors.add(exec);
                 System.out.println("[HCA] External executor found (plugin): " + plugin.getName());
                 return;
@@ -30,7 +30,7 @@ public final class HcaExternalExecutorChain {
     }
 
     public boolean tryExecute(PackagedAbilityData data, AbilityContext ctx) {
-        for (IHcaExternalAbilityExecutor ex : executors) {
+        for (IExternalAbilityExecutor ex : executors) {
             try {
                 if (ex != null && ex.doAbility(data, ctx)) return true;
             } catch (Throwable t) {
