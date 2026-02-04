@@ -9,6 +9,8 @@ import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static com.abilities.abilitiesplugin.HCA_AbilityApi.rng;
@@ -174,6 +176,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
     {
         //Context.PlayerRef.sendMessage(Message.raw("Local TP"));
 
+
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             return true;
         }
@@ -200,7 +203,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
             if (transform == null) return;
 
             Vector3d curPos = transform.getPosition();
-            Vector3f rot = transform.getRotation();
+            Vector3f rot = Context.PlayerRef.getHeadRotation();
 
             double yaw = Math.toRadians(rot.z); //no yaw yet
 
@@ -272,7 +275,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
         }
-        Context.PlayerRef.sendMessage(Message.raw("Trolololololol"));
+        Context.PlayerRef.sendMessage(Message.raw("Trolololololol")); //ideal for testing
 
         HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
@@ -283,9 +286,27 @@ public class HCA_DoAbility implements IAbilityPlugin {
         if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = HCA_AbilityApi.RefillAllAbilitiesWithUses(Context.PlayerRef, data.ID);
+        HCA_AbilityApi.AbilitySlotInfo[] all = HCA_AbilityApi.GetAllAbilities(Context.PlayerRef);
 
-        HCA_AbilityApi.UpdateHud(Context);
+        boolean changed = false;
+
+        for (HCA_AbilityApi.AbilitySlotInfo info : all) {
+            if (info == null) continue;
+            if (info.id == null || info.id.isBlank()) continue;
+
+            if (info.id.equalsIgnoreCase(data.ID)) continue; // ignore self
+            if (info.maxUses <= 0) continue; // unlimited or no-uses slot
+
+            if (info.remainingUses < info.maxUses) {
+                info.remainingUses = info.maxUses;
+                HCA_AbilityApi.SetSlotInformation(Context.PlayerRef, info);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            HCA_AbilityApi.UpdateHud(Context);
+        }
 
         HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
@@ -295,12 +316,35 @@ public class HCA_DoAbility implements IAbilityPlugin {
         if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
 
-        boolean didRefill = HCA_AbilityApi.RefillRandomAbilityWithUses(Context.PlayerRef, data.ID);
+        HCA_AbilityApi.AbilitySlotInfo[] all = HCA_AbilityApi.GetAllAbilities(Context.PlayerRef);
 
-        HCA_AbilityApi.UpdateHud(Context);
+        List<HCA_AbilityApi.AbilitySlotInfo> candidates = new ArrayList<>();
+        for (HCA_AbilityApi.AbilitySlotInfo info : all) {
+            if (info == null) continue;
+            if (info.id == null || info.id.isBlank()) continue;
+
+            if (info.id.equalsIgnoreCase(data.ID)) continue; // ignore self
+            if (info.maxUses <= 0) continue;
+            if (info.remainingUses >= info.maxUses) continue;
+
+            candidates.add(info);
+        }
+
+        if (!candidates.isEmpty()) {
+            int pick = HCA_AbilityApi.rng.nextInt(candidates.size());
+            HCA_AbilityApi.AbilitySlotInfo chosen = candidates.get(pick);
+
+            chosen.remainingUses = chosen.maxUses;
+            HCA_AbilityApi.SetSlotInformation(Context.PlayerRef, chosen);
+
+            HCA_AbilityApi.UpdateHud(Context);
+        }
+
         HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
+
+
 
     private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
@@ -363,27 +407,25 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
     private boolean abilityToggleLocalGlobal(PackagedAbilityData data, AbilityContext Context)
     {
-        Context.PlayerRef.sendMessage(Message.raw("Ability temporarily disabled, sorry"));
+
+        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
         return true;
+        }
 
-        //if (!CAO_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-        //    return true;
-        //}
+       final String teleportAxisId = "combat_abilities:teleport_axis";
 
-       // final String teleportAxisId = "combat_abilities:teleport_axis";
+        if (HCA_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
+        {
+        Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
+        HCA_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+        }
+        else
+        {
+          Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
+          HCA_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
+        }
 
-        //if (CAO_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
-       // {
-        //    Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
-        //    CAO_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-        //}
-        //else
-        //{
-          //  Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
-         //   CAO_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-       // }
-
-       // return true;
+       return true;
     }
 
 
