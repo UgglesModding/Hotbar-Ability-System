@@ -53,9 +53,6 @@ public class HCA_DoAbility implements IAbilityPlugin {
             case "combat_abilities:teleport_axis":
                 return abilityTeleportAxis(Data, Context);
 
-            case "combat_abilities:toggle_local_global":
-                return abilityToggleLocalGlobal(Data,Context);
-
             case "combat_abilities:set_multiplication_power":
                 return abilitySetMultiplicationPower(Data,Context);
 
@@ -72,10 +69,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
     // Ability functions (one per case)
     // ----------------------------
 
-    private boolean abilityRandomTeleport(PackagedAbilityData data, AbilityContext Context) {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            return true;
-        }
+    public static boolean abilityRandomTeleport(PackagedAbilityData data, AbilityContext Context) {
 
         double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
 
@@ -102,16 +96,11 @@ public class HCA_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
-
         return true;
     }
 
-    private boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
+    public static boolean abilityTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            return true;
-        } // teleports the player in desired direction
 
         double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
 
@@ -162,18 +151,11 @@ public class HCA_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
-    private boolean abilityLocalTeleportAxis(PackagedAbilityData data, AbilityContext Context)
+    public static boolean abilityLocalTeleportAxis(PackagedAbilityData data, AbilityContext Context)
     {
-        //Context.PlayerRef.sendMessage(Message.raw("Local TP"));
-
-
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            return true;
-        }
 
         double fullPower = data.PowerMultiplier * Context.PowerMultiplier;
 
@@ -258,13 +240,12 @@ public class HCA_DoAbility implements IAbilityPlugin {
             Context.Store.addComponent(Context.EntityRef, Teleport.getComponentType(), teleport);
         });
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
 
 
-    private boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
+    public static boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
             return true;
@@ -276,9 +257,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
     }
 
 
-    private boolean abilityFullReload(PackagedAbilityData data, AbilityContext Context) {
-        if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
+    public boolean abilityFullReload(PackagedAbilityData data, AbilityContext Context) {
 
         HCA_AbilityApi.AbilitySlotInfo[] all = HCA_AbilityApi.GetAllAbilities(Context.PlayerRef);
 
@@ -302,13 +281,10 @@ public class HCA_DoAbility implements IAbilityPlugin {
             HCA_AbilityApi.UpdateHud(Context);
         }
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
     }
 
-    private boolean abilityReloadRandom(PackagedAbilityData data, AbilityContext Context) {
-        if (!HCA_AbilityApi.HasUsesLeft(Context.PlayerRef, data.ID)) return true;
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) return true;
+    public static boolean abilityReloadRandom(PackagedAbilityData data, AbilityContext Context) {
 
         HCA_AbilityApi.AbilitySlotInfo[] all = HCA_AbilityApi.GetAllAbilities(Context.PlayerRef);
 
@@ -334,16 +310,13 @@ public class HCA_DoAbility implements IAbilityPlugin {
             HCA_AbilityApi.UpdateHud(Context);
         }
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
+
         return true;
     }
 
 
 
-    private boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            return true;
-        }
+    public static boolean abilityCoinflip(PackagedAbilityData data, AbilityContext Context) {
 
         boolean heads = rng.nextBoolean();
         EntityStatMap EntityStatMapComponent = Context.Store.getComponent(Context.EntityRef, EntityStatMap.getComponentType());
@@ -362,15 +335,11 @@ public class HCA_DoAbility implements IAbilityPlugin {
             EntityStatMapComponent.setStatValue(healthStat, 1);
 
         }
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
+
         return true;
     }
 
-    private boolean abilityFullHeal(PackagedAbilityData Data, AbilityContext Context) {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
-            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
-            return true;
-        }
+    public static boolean abilityFullHeal(PackagedAbilityData Data, AbilityContext Context) {
 
         EntityStatMap EntityStatMapComponent = Context.Store.getComponent(Context.EntityRef, EntityStatMap.getComponentType());
         int healthStat = DefaultEntityStatTypes.getHealth();
@@ -380,13 +349,13 @@ public class HCA_DoAbility implements IAbilityPlugin {
         return true;
     }
 
-    private boolean abilityEmpty(PackagedAbilityData Data, AbilityContext Context) {
+    public boolean abilityEmpty(PackagedAbilityData Data, AbilityContext Context) {
 
         Context.PlayerRef.sendMessage(Message.raw("[CAO] slot marked as empty"));
         return true;
     }
 
-    private boolean abilitySetMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
+    public static boolean abilitySetMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
     {
         if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
             //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
@@ -395,31 +364,7 @@ public class HCA_DoAbility implements IAbilityPlugin {
         float fullPower = data.PowerMultiplier * Context.PowerMultiplier;
         HCA_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
 
-        HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
-    }
-
-    private boolean abilityToggleLocalGlobal(PackagedAbilityData data, AbilityContext Context)
-    {
-
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-        return true;
-        }
-
-       final String teleportAxisId = "combat_abilities:teleport_axis";
-
-        if (HCA_AbilityApi.HasAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle"))
-        {
-        Context.PlayerRef.sendMessage(Message.raw("Teleports set to global axis"));
-        HCA_AbilityApi.RemoveAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-        }
-        else
-        {
-          Context.PlayerRef.sendMessage(Message.raw("Teleports set to local axis"));
-          HCA_AbilityApi.AddAbilityString(Context.PlayerRef, teleportAxisId, "GrimoireToggle");
-        }
-
-       return true;
     }
 
 
