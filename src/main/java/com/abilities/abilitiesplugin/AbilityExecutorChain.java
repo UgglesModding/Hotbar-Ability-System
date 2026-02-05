@@ -7,13 +7,13 @@ import java.util.List;
 
 public final class AbilityExecutorChain {
 
-    private final List<IHcaAbilityExecutor> executors = new ArrayList<>();
+    private final List<IAbilityExecutor> executors = new ArrayList<>();
 
     public void discoverExecutors() {
         executors.clear();
 
         for (var plugin : PluginManager.get().getPlugins()) {
-            if (plugin instanceof IHcaAbilityExecutor exec) {
+            if (plugin instanceof IAbilityExecutor exec) {
                 executors.add(exec);
                 System.out.println("[HCA] Found ability executor: " + plugin.getName()
                         + " class=" + plugin.getClass().getName());
@@ -24,7 +24,7 @@ public final class AbilityExecutorChain {
     }
 
     public boolean execute(AbilityContext ctx) {
-        for (IHcaAbilityExecutor exec : executors) {
+        for (IAbilityExecutor exec : executors) {
             try {
                 if (exec.doAbility(ctx)) return true;
             } catch (Throwable t) {

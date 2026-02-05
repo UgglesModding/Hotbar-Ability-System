@@ -139,8 +139,15 @@ public class AbilitySystem {
                         abilityValue
                 );
 
+                if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.ID)) {
+                    return;
+                } //check for uses. If none, then stop logic
+
                 boolean handled = AbilityDispatch.dispatch(data, ctx);
-                if (!handled) return;
+                if (!handled) { return;} else { //auto consumes charge if consume is true
+                    HCA_AbilityApi.ConsumeChargeInHand(ctx, 1);
+                };
+
 
                 if (s.enabled && ctx.Player != null) {
                     ctx.Player.getHudManager().setCustomHud(
