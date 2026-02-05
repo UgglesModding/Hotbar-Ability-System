@@ -1,8 +1,5 @@
 {
   "Weapons": [
-    "Server/Item/Items/Weapons/HCA_Weapons/HCA_Weapon.json",
-    "Server/Item/Items/Weapons/HCA_Weapons/HCA_AncientElvenStaff.json",
-    "Server/Item/Items/Weapons/HCA_Weapons/HCA_TeleportationGrimoire.json",
-    "Server/Item/Items/Weapons/HCA_Weapons/Daggers/index.json"
+    "Server/Item/Items/Weapons/HCA_Weapons/HCA_Weapon.json"
   ]
 }
