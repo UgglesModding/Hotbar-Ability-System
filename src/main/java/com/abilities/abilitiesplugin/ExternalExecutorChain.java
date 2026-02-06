@@ -1,91 +1,130 @@
 package com.abilities.abilitiesplugin;
 
+import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.plugin.PluginBase;
 import com.hypixel.hytale.server.core.plugin.PluginManager;
 
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class ExternalExecutorChain {
 
-    private final List<Entry> entries = new ArrayList<>();
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    public ExternalExecutorChain() {}
+    private static final class Entry {
+        final Object instance;
+        final Method method;
+
+        Entry(Object instance, Method method) {
+            this.instance = instance;
+            this.method = method;
+        }
+    }
+
+    private final List<Entry> entries = new ArrayList<>();
+    private int lastPluginCount = -1;
 
     public void discover() {
         entries.clear();
 
-        PluginManager.get().getPlugins().forEach(plugin -> {
-            if (plugin == null) return;
+        List<PluginBase> plugins = PluginManager.get().getPlugins();
+        if (plugins == null) {
+            LOGGER.atInfo().log("[HCA] External ability executors discovered: 0 (no plugins list)");
+            return;
+        }
 
-            // Optional: skip Hypixel internal spam
+        for (PluginBase plugin : plugins) {
+            if (plugin == null) continue;
+
             String cn = plugin.getClass().getName();
-            if (cn.startsWith("com.hypixel.")) return;
 
-            for (Method m : plugin.getClass().getMethods()) {
-                if (!m.getName().equals("doAbility")) continue;
-                if (m.getReturnType() != boolean.class && m.getReturnType() != Boolean.class) continue;
-
-                Class<?>[] p = m.getParameterTypes();
-                if (p.length != 2) continue;
-
-                // Accept (Object,Object) always
-                boolean objectObject =
-                        (p[0] == Object.class && p[1] == Object.class);
-
-                // Accept typed (PackagedAbilityData, AbilityContext) by NAME (no hard reference required)
-                boolean typedNames =
-                        "com.abilities.abilitiesplugin.PackagedAbilityData".equals(p[0].getName()) &&
-                                "com.abilities.abilitiesplugin.AbilityContext".equals(p[1].getName());
-
-                if (!objectObject && !typedNames) continue;
-
-                try {
-                    m.setAccessible(true);
-                    entries.add(new Entry(plugin, m, objectObject ? Sig.OBJECT_OBJECT : Sig.TYPED));
-                    System.out.println("[HCA] External ability hook: " + cn + "." + m.getName() +
-                            "(" + p[0].getSimpleName() + "," + p[1].getSimpleName() + ")");
-                } catch (Throwable ignored) {}
+            // IMPORTANT:
+            // - In production jar: skip scanning HCA itself
+            // - In dev (classes folder): allow scanning HCA itself for testing
+            if (cn.startsWith("com.abilities.abilitiesplugin")) {
+                if (!isRunningFromDirectory(plugin)) {
+                    continue;
+                }
             }
-        });
 
-        System.out.println("[HCA] External ability hooks discovered=" + entries.size());
+            scanPlugin(plugin);
+        }
+
+        LOGGER.atInfo().log("[HCA] External ability executors discovered: %d", entries.size());
     }
 
     public boolean tryExecute(PackagedAbilityData data, AbilityContext ctx) {
         if (data == null || ctx == null) return false;
 
+        refreshIfNeeded();
+
         for (Entry e : entries) {
             try {
-                Object ret;
-
-                // For BOTH signatures we pass the same objects.
-                // (Object,Object) obviously works.
-                // (PackagedAbilityData, AbilityContext) also works if the plugin compiled against HCA jar.
-                ret = e.method.invoke(e.pluginInstance, data, ctx);
-
-                if (ret instanceof Boolean && (Boolean) ret) {
-                    return true;
-                }
-            } catch (Throwable ignored) {
-                // swallow so one broken mod doesn't kill the chain
+                Object result = e.method.invoke(e.instance, data, ctx);
+                if (result instanceof Boolean && (Boolean) result) return true;
+            } catch (Throwable t) {
+                LOGGER.atSevere().log(
+                        "[HCA] External ability error in %s.%s : %s",
+                        e.instance.getClass().getName(),
+                        e.method.getName(),
+                        String.valueOf(t.getMessage())
+                );
             }
         }
 
         return false;
     }
 
-    private enum Sig { OBJECT_OBJECT, TYPED }
+    private void refreshIfNeeded() {
+        List<PluginBase> plugins = PluginManager.get().getPlugins();
+        int now = (plugins == null) ? 0 : plugins.size();
+        if (now != lastPluginCount) {
+            lastPluginCount = now;
+            discover();
+        }
+    }
 
-    private static final class Entry {
-        final Object pluginInstance;
-        final Method method;
-        final Sig sig;
+    private void scanPlugin(Object plugin) {
+        Class<?> cls = plugin.getClass();
 
-        Entry(Object pluginInstance, Method method, Sig sig) {
-            this.pluginInstance = pluginInstance;
-            this.method = method;
-            this.sig = sig;
+        for (Method m : cls.getDeclaredMethods()) {
+            if (!m.getName().equals("doAbility")) continue;
+            if (!boolean.class.equals(m.getReturnType())) continue;
+
+            Class<?>[] params = m.getParameterTypes();
+            if (params.length != 2) continue;
+
+            boolean typed = (params[0] == PackagedAbilityData.class && params[1] == AbilityContext.class);
+            boolean generic = (params[0] == Object.class && params[1] == Object.class);
+
+            if (!typed && !generic) continue;
+
+            m.setAccessible(true);
+            entries.add(new Entry(plugin, m));
+
+            LOGGER.atInfo().log(
+                    "[HCA] External ability hook (%s): %s.%s",
+                    typed ? "typed" : "generic",
+                    cls.getName(),
+                    m.getName()
+            );
+        }
+    }
+
+    private boolean isRunningFromDirectory(Object plugin) {
+        try {
+            var cs = plugin.getClass().getProtectionDomain().getCodeSource();
+            if (cs == null || cs.getLocation() == null) return false;
+            URI uri = cs.getLocation().toURI();
+            Path p = Paths.get(uri);
+            return Files.isDirectory(p);
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 }
