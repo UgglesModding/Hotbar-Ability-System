@@ -1,7 +1,6 @@
 package com.abilities.abilitiesplugin;
 
 import com.google.gson.*;
-
 import com.hypixel.hytale.server.core.plugin.PluginManager;
 
 import java.io.*;
@@ -15,6 +14,7 @@ import java.util.zip.ZipFile;
  * Single-source pack loader:
  * - applies Hotbar's own pack first
  * - loads packs from every plugin's dataDir/hca/*.json
+ * - loads packs from every plugin jar resources (HCA/*.json)
  * - optionally loads packs from mods folder jar files (HCA/*.json)
  *
  * Packs are applied directly to WeaponRegistry (no queue).
@@ -96,13 +96,13 @@ public final class ModPackScanner {
 
         int applied = 0;
 
-        // 1) Apply Hotbar's own pack first (resource inside Hotbars jar)
+        // ✅ REQUIRED: base HCA pack must be applied first
         applied += applyHotbarPack(weaponRegistry, hotbarLoader);
 
-        // 2) Apply packs from plugin data dirs: <dataDir>/hca/*.json
         applied += applyPluginDataDirPacks(weaponRegistry);
 
-        // 3) Optional legacy: scan mods folder jars for HCA/*.json packs
+        applied += applyPluginJarResourcePacks(weaponRegistry);
+
         applied += applyModsFolderJarPacks(weaponRegistry);
 
         System.out.println("[HCA] ModPackScanner: total packs applied=" + applied);
@@ -113,15 +113,50 @@ public final class ModPackScanner {
     // -----------------------------
     private static int applyHotbarPack(WeaponRegistry weaponRegistry, ClassLoader hotbarLoader) {
         String path = "HCA/HCA_pack.json";
+
+        // Normal: load from resources inside jar
         try (InputStream in = hotbarLoader.getResourceAsStream(path)) {
+
             if (in == null) {
-                System.out.println("[HCA] Missing Hotbar pack resource: " + path);
-                return 0;
+                // ✅ Dev fallback: allow folder-based testing if resources aren't packed
+                Path p1 = Paths.get("src/main/resources/HCA/HCA_pack.json");
+                Path p2 = Paths.get("main/resources/HCA/HCA_pack.json");
+                Path pick = Files.exists(p1) ? p1 : (Files.exists(p2) ? p2 : null);
+
+                if (pick == null) {
+                    System.out.println("[HCA] Missing Hotbar pack resource: " + path);
+                    return 0;
+                }
+
+                try {
+                    byte[] bytes = Files.readAllBytes(pick);
+
+                    // root should be folder containing "HCA/"
+                    // pick = .../resources/HCA/HCA_pack.json
+                    // root = .../resources
+                    Path root = pick.getParent().getParent();
+
+                    boolean ok = applyPackBytes(
+                            weaponRegistry,
+                            new FileSystemAccess(root),
+                            bytes,
+                            "HotbarAbilities:devFolder"
+                    );
+
+                    System.out.println("[HCA] Hotbar pack (dev folder) applied=" + ok + " from=" + pick);
+                    return ok ? 1 : 0;
+
+                } catch (Throwable t2) {
+                    System.out.println("[HCA] Failed reading Hotbar pack from dev folder: " + t2.getMessage());
+                    return 0;
+                }
             }
+
             byte[] bytes = in.readAllBytes();
             boolean ok = applyPackBytes(weaponRegistry, new ClassLoaderAccess(hotbarLoader), bytes, "HotbarAbilities");
             System.out.println("[HCA] Hotbar pack applied=" + ok);
             return ok ? 1 : 0;
+
         } catch (Throwable t) {
             System.out.println("[HCA] Failed reading Hotbar pack: " + t.getMessage());
             return 0;
@@ -166,6 +201,88 @@ public final class ModPackScanner {
                 }
             } catch (Throwable t) {
                 System.out.println("[HCA] dataDir scan error for " + plugin + ": " + t.getMessage());
+            }
+        }
+
+        return applied;
+    }
+
+    // -----------------------------
+    // Step 2.5: plugin jar resource scan
+    // -----------------------------
+    private static int applyPluginJarResourcePacks(WeaponRegistry weaponRegistry) {
+        int applied = 0;
+
+        for (var plugin : PluginManager.get().getPlugins()) {
+            if (plugin == null) continue;
+
+            // Skip Hypixel internals
+            String cn = plugin.getClass().getName();
+            if (cn.startsWith("com.hypixel.")) continue;
+
+            // Skip HCA itself (Hotbar pack is applied in step 1)
+            if (cn.startsWith("com.abilities.abilitiesplugin.")) continue;
+
+            Path jarPath = null;
+            try {
+                var cs = plugin.getClass().getProtectionDomain().getCodeSource();
+                if (cs == null || cs.getLocation() == null) continue;
+                jarPath = Paths.get(cs.getLocation().toURI());
+            } catch (Throwable ignored) {}
+
+            if (jarPath == null) continue;
+
+            // Only scan real jars here
+            String jarLower = jarPath.toString().toLowerCase(Locale.ROOT);
+            if (!jarLower.endsWith(".jar")) continue;
+            if (!Files.exists(jarPath)) continue;
+
+            String jarName = jarPath.getFileName().toString();
+
+            try (ZipFile zip = new ZipFile(jarPath.toFile())) {
+                List<String> packEntries = new ArrayList<>();
+
+                // Standard pack name
+                if (zip.getEntry("HCA/HCA_pack.json") != null) {
+                    packEntries.add("HCA/HCA_pack.json");
+                }
+
+                // Alternate names: HCA/*hca_pack.json (your existing behavior)
+                Enumeration<? extends ZipEntry> en = zip.entries();
+                while (en.hasMoreElements()) {
+                    ZipEntry e = en.nextElement();
+                    String name = e.getName();
+                    if (name == null) continue;
+
+                    String n = name.replace("\\", "/");
+                    if (!n.startsWith("HCA/")) continue;
+                    if (!n.toLowerCase(Locale.ROOT).endsWith("hca_pack.json")) continue;
+
+                    packEntries.add(n);
+                }
+
+                packEntries.sort(String.CASE_INSENSITIVE_ORDER);
+                if (packEntries.isEmpty()) continue;
+
+                ResourceAccess access = new ZipResourceAccess(jarPath);
+
+                for (String entryName : packEntries) {
+                    ZipEntry entry = zip.getEntry(entryName);
+                    if (entry == null) continue;
+
+                    byte[] bytes;
+                    try (InputStream in = zip.getInputStream(entry)) {
+                        bytes = in.readAllBytes();
+                    }
+
+                    String tag = "PLUGINJAR::" + jarName + "::" + entryName;
+                    boolean ok = applyPackBytes(weaponRegistry, access, bytes, tag);
+                    if (ok) applied++;
+
+                    System.out.println("[HCA] plugin-jar pack applied=" + ok + " tag=" + tag);
+                }
+            } catch (Throwable t) {
+                System.out.println("[HCA] failed scanning plugin jar " + jarName + ": " + t.getMessage());
             }
         }
 
@@ -317,7 +434,6 @@ public final class ModPackScanner {
                 try { idxPath = idxEl.getAsString(); } catch (Throwable ignored) {}
                 if (idxPath == null || idxPath.isBlank()) continue;
 
-                // NOTE: WeaponRegistry signature must use ModPackScanner.ResourceAccess now
                 weaponRegistry.registerIndexFromAccess(access, normalizePath(idxPath), visited, sourceTag);
             }
         }
@@ -329,7 +445,6 @@ public final class ModPackScanner {
     // Mods dir finder
     // -----------------------------
     private static Path findModsDir() {
-        // If your API has MODS_PATH, prefer it:
         try {
             Path p = PluginManager.MODS_PATH;
             if (p != null && Files.isDirectory(p)) return p;

@@ -24,6 +24,7 @@ public class CombatAbilityPlugin extends JavaPlugin {
         WeaponRegistry weaponRegistry = new WeaponRegistry();
         HCA_AbilityApi.Init(state);
 
+        // ✅ This will now apply Hotbar's own HCA/HCA_pack.json first again
         ModPackScanner.loadAllPacks(weaponRegistry, getClass().getClassLoader());
 
         // Now build ability system
@@ -34,7 +35,6 @@ public class CombatAbilityPlugin extends JavaPlugin {
         chain.discover();
 
         AbilityDispatch.register(new HCA_DoAbility(chain));
-
 
         // Commands
         this.getCommandRegistry().registerCommand(new AbilityToggleCommand(state, abilitySystem));
