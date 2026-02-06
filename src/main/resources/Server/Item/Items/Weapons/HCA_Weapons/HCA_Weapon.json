@@ -3,11 +3,10 @@
   "AbilityBar": "AbilityBar.ui",
   "AbilitySlots": [
     {
-      "Key": "Ability_Random_Teleport",
-      "MaxUses": 10,
-      "PowerMultiplier": 6.0,
-      "ID": "combat_abilities:randomteleport",
-      "Plugin": true
+      "Key": "Ability_Empty",
+      "MaxUses": 3,
+      "PowerMultiplier": 1.0,
+      "ID": "combat_abilities:empty"
     },
     {
       "Key": "Ability_Trololololol",

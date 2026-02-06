@@ -71,7 +71,7 @@ Group #Root {
 
         Group #Icon1 {
           Anchor: (Left: 2, Top: 2, Right: 2, Bottom: 2);
-          Background: PatchStyle(TexturePath:"Abilities/RandomTeleport.png");
+          Background: @EmptyIcon;
         }
 
         // Cooldown overlay (you'll squish CD1Fill later)
