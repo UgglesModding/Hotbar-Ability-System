@@ -308,6 +308,12 @@ public class WeaponRegistry {
 
         WeaponDefinition base = byItemId.get(useDef);
         if (base == null) {
+            if (ensureRegistered(useDef)) {
+                base = byItemId.get(useDef);
+            }
+        }
+
+        if (base == null) {
             System.out.println("[WeaponRegistry] Override refers to missing UseDefinition=" + useDef + " for ItemId=" + nItem);
             return false;
         }
