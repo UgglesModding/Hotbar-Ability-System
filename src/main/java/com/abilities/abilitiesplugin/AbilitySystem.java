@@ -27,19 +27,19 @@ public class AbilitySystem {
         this.interactionExecutor = interactionExecutor;
     }
 
-    public void refreshFromHeldWeapon(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
+    public boolean refreshFromHeldWeapon(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
         var s = state.get(playerRef.getUsername());
 
         Player player = store.getComponent(entityRef, Player.getComponentType());
         if (player == null) {
             s.fillAllEmpty();
-            return;
+            return false;
         }
 
         String heldItemId = ItemIdUtil.normalizeItemId(getHeldItemId(player));
         if (heldItemId == null || heldItemId.isBlank()) {
             s.fillAllEmpty();
-            return;
+            return false;
         }
 
         // NEW: register via overrides if needed
@@ -50,7 +50,7 @@ public class AbilitySystem {
 
         if (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank() || slots == null) {
             s.fillAllEmpty();
-            return;
+            return false;
         }
 
         for (int i = 0; i < 9; i++) {
@@ -93,6 +93,7 @@ public class AbilitySystem {
         }
 
         s.selectedAbilitySlot = 1;
+        return true;
     }
 
     public void useSlot(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> ref, World world, int slot1to9) {
