@@ -19,6 +19,8 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
@@ -61,30 +63,40 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                 // Ability1 (Q): toggle bar
                 // -------------------------
                 if (chain.interactionType.name().equalsIgnoreCase("Ability1")) {
-
+                    CompletableFuture<Boolean> handled = new CompletableFuture<>();
                     world.execute(() -> {
                         Player player = store.getComponent(ref, Player.getComponentType());
-                        if (player == null) return;
+                        if (player == null) {
+                            handled.complete(false);
+                            return;
+                        }
 
-                        abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
+                        boolean hasBar = abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         var s2 = state.get(playerRef.getUsername());
 
-                        if (s2.abilityBarUiPath == null || s2.abilityBarUiPath.isBlank()) {
-                            s2.enabled = false;
-                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                        if (!hasBar) {
+                            if (s2.enabled) {
+                                AbilityBarUtil.forceOff(state, player, playerRef);
+                            }
+                            handled.complete(false);
                             return;
                         }
 
                         s2.enabled = !s2.enabled;
-
                         if (s2.enabled) {
                             player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
                         } else {
                             player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
                         }
+
+                        handled.complete(true);
                     });
 
-                    return true; // consume Ability1
+                    try {
+                        return handled.get(250, TimeUnit.MILLISECONDS);
+                    } catch (Exception ignored) {
+                        return false;
+                    }
                 }
 
                 // ---------------------------------------------------
