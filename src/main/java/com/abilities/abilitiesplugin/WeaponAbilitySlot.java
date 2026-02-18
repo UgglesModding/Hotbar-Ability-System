@@ -10,4 +10,7 @@ public class WeaponAbilitySlot {
     public String Icon;
     public int AbilityValue;
     public boolean Consume;
+    public float CooldownTime;
+    public float RechargeTime;
+    public boolean StartWithCooldown;
 }

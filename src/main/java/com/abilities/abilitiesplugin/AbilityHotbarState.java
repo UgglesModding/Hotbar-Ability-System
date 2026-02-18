@@ -26,6 +26,13 @@ public class AbilityHotbarState {
         public final String[] hotbarIcons = new String[9];
         public final int[] hotbarRemainingUses = new int[9];
         public final int[] hotbarAbilityValues = new int[9];
+        public final float[] hotbarCooldownTimes = new float[9];
+        public final float[] hotbarRechargeTimes = new float[9];
+        public final boolean[] hotbarStartWithCooldown = new boolean[9];
+        public final long[] hotbarCooldownUntilMs = new long[9];
+        public final double[] hotbarRechargeAccumulatorSec = new double[9];
+        public final long[] hotbarLastUpdateMs = new long[9];
+        @SuppressWarnings("unchecked")
         public final List<String>[] hotbarStringFlags = new ArrayList[9];
 
         public float PlayerPowerMultiplier = 1.0f;
@@ -34,6 +41,7 @@ public class AbilityHotbarState {
 
         public int suppressNextSetActiveSlot = -1;
         public long suppressNextSetActiveSlotUntilMs = 0;
+        public long nextHudRefreshAtMs = 0;
 
         public void fillAllEmpty() {
             abilityBarUiPath = null;
@@ -49,10 +57,17 @@ public class AbilityHotbarState {
                 hotbarPowerMultipliers[i] = 1.0f;
                 hotbarIcons[i] = null;
                 hotbarRemainingUses[i] = 0;
+                hotbarCooldownTimes[i] = 0.3f;
+                hotbarRechargeTimes[i] = 1.0f;
+                hotbarStartWithCooldown[i] = true;
+                hotbarCooldownUntilMs[i] = 0L;
+                hotbarRechargeAccumulatorSec[i] = 0.0;
+                hotbarLastUpdateMs[i] = 0L;
                 hotbarStringFlags[i] = new ArrayList<>();
 
             }
             selectedAbilitySlot = 1;
+            nextHudRefreshAtMs = 0L;
         }
     }
 

@@ -13,14 +13,16 @@
       "MaxUses": 30,
       "PowerMultiplier": 1.0,
       "ID": "combat_abilities:trololol",
-      "Plugin": true
+      "Plugin": true,
+      "RechargeTime": 2.0
     },
     {
       "Key": "Ability_FullReload",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_abilities:fullreload",
-      "Plugin": true
+      "Plugin": true,
+      "RechargeTime": 0
     },
     {
       "Key": "Ability_ReloadRandom",
@@ -46,7 +48,9 @@
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_abilities:coinflip",
-      "Plugin": true
+      "Plugin": true,
+      "CooldownTime": 20.0,
+      "RechargeTime": 30
     },
     {
       "Key": "Ability_Empty",
@@ -59,7 +63,9 @@
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
       "ID": "combat_abilities:full_heal",
-      "Plugin": true
+      "Plugin": true,
+      "CooldownTime": 5.0,
+      "RechargeTime": 15
     }
   ],
   "Interactions": {

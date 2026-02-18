@@ -49,6 +49,10 @@ public final class HCA_AbilityApi {
         public int abilityValue;
 
         public String icon;
+        public float cooldownTime = 0.3f;
+        public float rechargeTime = 1.0f;
+        public boolean startWithCooldown = true;
+        public long cooldownUntilMs;
 
         public AbilitySlotInfo(int slotIndex0to8) {
             this.slotIndex0to8 = slotIndex0to8;
@@ -62,6 +66,7 @@ public final class HCA_AbilityApi {
         if (slotIndex0to8 < 0 || slotIndex0to8 > 8) return null;
 
         var s = state.get(playerRef.getUsername());
+        tickRecharge(s, slotIndex0to8, System.currentTimeMillis());
         AbilitySlotInfo info = new AbilitySlotInfo(slotIndex0to8);
 
         info.key = s.hotbarItemIds[slotIndex0to8];
@@ -78,6 +83,10 @@ public final class HCA_AbilityApi {
         info.abilityValue = s.hotbarAbilityValues[slotIndex0to8];
 
         info.icon = s.hotbarIcons[slotIndex0to8];
+        info.cooldownTime = s.hotbarCooldownTimes[slotIndex0to8];
+        info.rechargeTime = s.hotbarRechargeTimes[slotIndex0to8];
+        info.startWithCooldown = s.hotbarStartWithCooldown[slotIndex0to8];
+        info.cooldownUntilMs = s.hotbarCooldownUntilMs[slotIndex0to8];
 
         return info;
     }
@@ -139,6 +148,12 @@ public final class HCA_AbilityApi {
         s.hotbarAbilityValues[idx] = info.abilityValue;
 
         s.hotbarIcons[idx] = info.icon;
+        s.hotbarCooldownTimes[idx] = Math.max(0.0f, info.cooldownTime);
+        s.hotbarRechargeTimes[idx] = Math.max(0.0f, info.rechargeTime);
+        s.hotbarStartWithCooldown[idx] = info.startWithCooldown;
+        s.hotbarCooldownUntilMs[idx] = Math.max(0L, info.cooldownUntilMs);
+        s.hotbarLastUpdateMs[idx] = System.currentTimeMillis();
+        s.hotbarRechargeAccumulatorSec[idx] = 0.0;
 
         return true;
     }
@@ -166,6 +181,11 @@ public final class HCA_AbilityApi {
         if (idx < 0) return false;
 
         var s = state.get(playerRef.getUsername());
+        long now = System.currentTimeMillis();
+        tickRecharge(s, idx, now);
+
+        if (isLockedByCooldown(s, idx, now)) return false;
+
         int max = s.hotbarMaxUses[idx];
         if (max <= 0) return true;
         return s.hotbarRemainingUses[idx] > 0;
@@ -179,15 +199,132 @@ public final class HCA_AbilityApi {
         if (idx < 0) return false;
 
         var s = state.get(playerRef.getUsername());
+        long now = System.currentTimeMillis();
+        tickRecharge(s, idx, now);
+
+        if (isLockedByCooldown(s, idx, now)) return false;
+
         int max = s.hotbarMaxUses[idx];
 
-        if (max <= 0) return true;
+        if (max <= 0) {
+            applyPostUseCooldown(s, idx, now);
+            return true;
+        }
 
         int remaining = s.hotbarRemainingUses[idx];
         if (remaining <= 0) return false;
 
         s.hotbarRemainingUses[idx] = remaining - 1;
+        s.hotbarRechargeAccumulatorSec[idx] = 0.0;
+        s.hotbarLastUpdateMs[idx] = now;
+        applyPostUseCooldown(s, idx, now);
         return true;
+    }
+
+    public static void TickAllSlots(PlayerRef playerRef) {
+        if (state == null || playerRef == null) return;
+        var s = state.get(playerRef.getUsername());
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < 9; i++) {
+            tickRecharge(s, i, now);
+        }
+    }
+
+    static float getCooldownOverlayRatio(AbilityHotbarState.State s, int idx, long nowMs) {
+        if (s == null || idx < 0 || idx > 8) return 0.0f;
+
+        tickRecharge(s, idx, nowMs);
+
+        float cooldownSec = sanitizeTime(s.hotbarCooldownTimes[idx]);
+        if (cooldownSec <= 0.0f) return 0.0f;
+
+        long lockRemainingMs = Math.max(0L, s.hotbarCooldownUntilMs[idx] - nowMs);
+        float lockRemainingSec = (lockRemainingMs > 0L) ? (lockRemainingMs / 1000.0f) : 0.0f;
+        float ratio = lockRemainingSec / cooldownSec;
+
+        if (ratio < 0.0f) ratio = 0.0f;
+        if (ratio > 1.0f) ratio = 1.0f;
+        return ratio;
+    }
+
+    private static void tickRecharge(AbilityHotbarState.State s, int idx, long nowMs) {
+        if (s == null || idx < 0 || idx > 8) return;
+
+        int max = s.hotbarMaxUses[idx];
+        if (max <= 0) {
+            s.hotbarLastUpdateMs[idx] = nowMs;
+            return;
+        }
+
+        float rechargeSec = sanitizeTime(s.hotbarRechargeTimes[idx]);
+        if (rechargeSec <= 0.0f) {
+            s.hotbarLastUpdateMs[idx] = nowMs;
+            return;
+        }
+
+        long last = s.hotbarLastUpdateMs[idx];
+        if (last <= 0L) {
+            s.hotbarLastUpdateMs[idx] = nowMs;
+            return;
+        }
+
+        long deltaMs = nowMs - last;
+        if (deltaMs <= 0L) return;
+
+        if (s.hotbarRemainingUses[idx] >= max) {
+            s.hotbarRechargeAccumulatorSec[idx] = 0.0;
+            s.hotbarLastUpdateMs[idx] = nowMs;
+            return;
+        }
+
+        double accumulator = s.hotbarRechargeAccumulatorSec[idx] + (deltaMs / 1000.0);
+        while (accumulator + 1e-9 >= rechargeSec && s.hotbarRemainingUses[idx] < max) {
+            s.hotbarRemainingUses[idx]++;
+            accumulator -= rechargeSec;
+        }
+
+        s.hotbarRechargeAccumulatorSec[idx] = Math.max(0.0, accumulator);
+        s.hotbarLastUpdateMs[idx] = nowMs;
+    }
+
+    private static boolean isLockedByCooldown(AbilityHotbarState.State s, int idx, long nowMs) {
+        if (s == null || idx < 0 || idx > 8) return false;
+        return nowMs < s.hotbarCooldownUntilMs[idx];
+    }
+
+    private static void applyPostUseCooldown(AbilityHotbarState.State s, int idx, long nowMs) {
+        if (s == null || idx < 0 || idx > 8) return;
+
+        float cooldownSec = sanitizeTime(s.hotbarCooldownTimes[idx]);
+        if (cooldownSec <= 0.0f) return;
+
+        long lockMs = (long) Math.max(0L, Math.round(cooldownSec * 1000.0f));
+        s.hotbarCooldownUntilMs[idx] = nowMs + lockMs;
+    }
+
+    public static void InitializeSlotRuntime(AbilityHotbarState.State s, int idx) {
+        if (s == null || idx < 0 || idx > 8) return;
+
+        long nowMs = System.currentTimeMillis();
+
+        int maxUses = s.hotbarMaxUses[idx];
+        s.hotbarRemainingUses[idx] = (maxUses > 0) ? maxUses : 0;
+
+        s.hotbarRechargeAccumulatorSec[idx] = 0.0;
+        s.hotbarLastUpdateMs[idx] = nowMs;
+
+        float cooldownSec = sanitizeTime(s.hotbarCooldownTimes[idx]);
+        if (s.hotbarStartWithCooldown[idx] && cooldownSec > 0.0f) {
+            long lockMs = (long) Math.max(0L, Math.round(cooldownSec * 1000.0f));
+            s.hotbarCooldownUntilMs[idx] = nowMs + lockMs;
+        } else {
+            s.hotbarCooldownUntilMs[idx] = 0L;
+        }
+    }
+
+    private static float sanitizeTime(float time) {
+        if (Float.isNaN(time) || Float.isInfinite(time)) return 0.0f;
+        return Math.max(0.0f, time);
     }
 
     public static void UpdateHud(AbilityContext Context) {

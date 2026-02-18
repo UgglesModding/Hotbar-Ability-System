@@ -50,6 +50,22 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
+        long now = System.currentTimeMillis();
+
+        // Keep HUD live-updating while enabled so cooldown overlays animate and recharges show up.
+        if (s.enabled && now >= s.nextHudRefreshAtMs) {
+            s.nextHudRefreshAtMs = now + 100L;
+            world.execute(() -> {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                if (player == null) return;
+
+                var s2 = state.get(playerRef.getUsername());
+                if (!s2.enabled) return;
+
+                HCA_AbilityApi.TickAllSlots(playerRef);
+                player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
+            });
+        }
 
         // =========================================================
         // 1) SyncInteractionChains (Ability1 toggle + SwapFrom hotbar)
@@ -123,8 +139,8 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                         var s2 = state.get(playerRef.getUsername());
 
                         // If this SwapFrom is our own correction echo, ignore it
-                        long now = System.currentTimeMillis();
-                        if (now <= s2.suppressNextSetActiveSlotUntilMs && target == s2.suppressNextSetActiveSlot) {
+                        long nowMsSwap = System.currentTimeMillis();
+                        if (nowMsSwap <= s2.suppressNextSetActiveSlotUntilMs && target == s2.suppressNextSetActiveSlot) {
                             s2.suppressNextSetActiveSlot = -1;
                             s2.suppressNextSetActiveSlotUntilMs = 0;
                             return;
@@ -179,8 +195,8 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
             if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
             if (incomingSlot < 0 || incomingSlot > 8) return false;
 
-            long now = System.currentTimeMillis();
-            if (now <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
+            long nowMsSuppress = System.currentTimeMillis();
+            if (nowMsSuppress <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
                 s.suppressNextSetActiveSlot = -1;
                 s.suppressNextSetActiveSlotUntilMs = 0;
                 return true;

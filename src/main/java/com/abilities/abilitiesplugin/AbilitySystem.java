@@ -72,9 +72,11 @@ public class AbilitySystem {
                 s.hotbarPowerMultipliers[i] = power;
 
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
+                s.hotbarCooldownTimes[i] = (slot == null) ? 0.3f : slot.CooldownTime;
+                s.hotbarRechargeTimes[i] = (slot == null) ? 1.0f : slot.RechargeTime;
+                s.hotbarStartWithCooldown[i] = (slot == null) || slot.StartWithCooldown;
 
-                if (s.hotbarMaxUses[i] > 0) s.hotbarRemainingUses[i] = s.hotbarMaxUses[i];
-                else s.hotbarRemainingUses[i] = 0;
+                HCA_AbilityApi.InitializeSlotRuntime(s, i);
 
             } else {
                 s.hotbarItemIds[i] = null;
@@ -89,6 +91,12 @@ public class AbilitySystem {
                 s.hotbarIcons[i] = null;
                 s.hotbarRemainingUses[i] = 0;
                 s.hotbarAbilityValues[i] = 0;
+                s.hotbarCooldownTimes[i] = 0.3f;
+                s.hotbarRechargeTimes[i] = 1.0f;
+                s.hotbarStartWithCooldown[i] = true;
+                s.hotbarCooldownUntilMs[i] = 0L;
+                s.hotbarRechargeAccumulatorSec[i] = 0.0;
+                s.hotbarLastUpdateMs[i] = 0L;
             }
         }
 
@@ -111,6 +119,7 @@ public class AbilitySystem {
 
         if (plugin) {
             if (id == null || id.isBlank()) return;
+            HCA_AbilityApi.TickAllSlots(playerRef);
 
             String key = s.hotbarItemIds[slot0to8];
             int maxUses = s.hotbarMaxUses[slot0to8];

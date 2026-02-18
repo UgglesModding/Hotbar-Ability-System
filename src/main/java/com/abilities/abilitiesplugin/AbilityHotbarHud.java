@@ -8,9 +8,6 @@ import javax.annotation.Nonnull;
 
 public class AbilityHotbarHud extends CustomUIHud {
 
-    // Must match the slot size in AbilityBar.ui
-    private static final int SLOT_PIXELS = 40;
-
     private final AbilityHotbarState state;
 
     public AbilityHotbarHud(
@@ -24,6 +21,7 @@ public class AbilityHotbarHud extends CustomUIHud {
     @Override
     protected void build(@Nonnull UICommandBuilder ui) {
         var s = state.get(this.getPlayerRef().getUsername());
+        HCA_AbilityApi.TickAllSlots(this.getPlayerRef());
 
 
         String uiPath = (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank())
@@ -34,6 +32,7 @@ public class AbilityHotbarHud extends CustomUIHud {
 
         for (int i = 1; i <= 9; i++) {
             applyUseBar(ui, i, s.hotbarRemainingUses[i - 1], s.hotbarMaxUses[i - 1]);
+            applyCooldownOverlay(ui, i, s);
         }
     }
 
@@ -61,6 +60,28 @@ public class AbilityHotbarHud extends CustomUIHud {
 
         // Show the chosen level (including 0)
         ui.set("#Bar" + barIndex1to9 + level + ".Visible", true);
+    }
+
+    private void applyCooldownOverlay(UICommandBuilder ui, int slot1to9, AbilityHotbarState.State s) {
+        int idx = slot1to9 - 1;
+        long now = System.currentTimeMillis();
+        float ratio = HCA_AbilityApi.getCooldownOverlayRatio(s, idx, now);
+
+        for (int step = 0; step <= BAR_STEPS; step++) {
+            ui.set("#CD" + slot1to9 + step + ".Visible", false);
+        }
+
+        if (ratio <= 0.0f) {
+            ui.set("#CD" + slot1to9 + ".Visible", false);
+            return;
+        }
+
+        int level = (int) Math.ceil(ratio * BAR_STEPS);
+        if (level < 1) level = 1;
+        if (level > BAR_STEPS) level = BAR_STEPS;
+
+        ui.set("#CD" + slot1to9 + ".Visible", true);
+        ui.set("#CD" + slot1to9 + level + ".Visible", true);
     }
 
 
