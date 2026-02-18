@@ -36,10 +36,11 @@
       "ID": "combat_abilities:empty"
     },
     {
-      "Key": "Ability_Empty",
+      "Key": "Ability_Staff_Flight",
       "MaxUses": 3,
       "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
+      "ID": "combat_abilities:flight",
+      "RootInteraction": "StaffFlight"
     },
     {
       "Key": "Ability_CoinFlip",
@@ -65,12 +66,13 @@
   "Interactions": {
     "Ability1": "OpenAbilityBar",
     "Primary": "Longsword_Attack",
-    "Secondary": "Longsword_Block_Damage"
+    "Secondary": "StaffFlight",
+    "HCA6": "StaffFlight"
   },
   "Icon": "Icons/ItemsGenerated/Weapon_Sword_Mithril.png",
   "Model": "Items/Weapons/Longsword/Adamantite.blockymodel",
   "TranslationProperties": {
-    "Name": "Test CAO Weapon"
+    "Name": "Test HCA Weapon"
   },
   "Categories": [
     "Items.Weapons"
