@@ -12,7 +12,6 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
-import org.bson.BsonDouble;
 import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonString;
@@ -134,7 +133,6 @@ public class AbilitySystem {
         s.boundItemId = heldItemId;
 
         loadRuntimeFromItem(s, held.stack);
-        persistBoundRuntime(playerRef, store, entityRef, true);
 
         return true;
     }
@@ -187,7 +185,6 @@ public class AbilitySystem {
                 if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.ID)) {
                     return;
                 } //check for uses. If none, then stop logic
-                persistBoundRuntime(playerRef, store, ref, true);
 
                 boolean handled = AbilityDispatch.dispatch(data, ctx);
                 if (!handled) { return;} else { //auto consumes charge if consume is true
@@ -235,6 +232,23 @@ public class AbilitySystem {
         return interactionExecutor.canExecute(root);
     }
 
+    public boolean isHoldingBoundItem(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
+        var s = state.get(playerRef.getUsername());
+
+        if (s.boundSlot < 0 || s.boundSlot > 8 || s.boundItemId == null || s.boundItemId.isBlank()) return false;
+
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        if (player == null) return false;
+
+        HeldItemRef held = getHeldItemRef(player);
+        if (held == null || held.stack == null || held.stack.isEmpty()) return false;
+        if (held.fromTools != s.boundToTools) return false;
+        if (held.slot != (short) s.boundSlot) return false;
+
+        String heldItemId = ItemIdUtil.normalizeItemId(held.stack.getItemId());
+        return heldItemId != null && heldItemId.equalsIgnoreCase(s.boundItemId);
+    }
+
     public void persistBoundRuntime(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef, boolean force) {
         var s = state.get(playerRef.getUsername());
         long now = System.currentTimeMillis();
@@ -254,7 +268,14 @@ public class AbilitySystem {
         String stackId = ItemIdUtil.normalizeItemId(stack.getItemId());
         if (stackId == null || !stackId.equalsIgnoreCase(s.boundItemId)) return;
 
-        ItemStack updated = writeRuntimeToItem(stack, s);
+        BsonDocument runtime = buildRuntimeDocument(s);
+        BsonDocument existing = getExistingRuntimeDocument(stack);
+        if (runtime.equals(existing)) {
+            s.nextRuntimePersistAtMs = now + 1000L;
+            return;
+        }
+
+        ItemStack updated = stack.withMetadata(RUNTIME_META_KEY, runtime);
         ItemStackSlotTransaction tx = container.setItemStackForSlot(slot, updated);
         if (tx != null && tx.succeeded()) {
             s.nextRuntimePersistAtMs = now + 1000L;
@@ -306,26 +327,25 @@ public class AbilitySystem {
             if (slot.containsKey("cd") && slot.get("cd").isInt64()) {
                 s.hotbarCooldownUntilMs[i] = Math.max(0L, slot.getInt64("cd").getValue());
             }
-            if (slot.containsKey("acc")) {
-                if (slot.get("acc").isDouble()) s.hotbarRechargeAccumulatorSec[i] = Math.max(0.0, slot.getDouble("acc").getValue());
-                else if (slot.get("acc").isInt32()) s.hotbarRechargeAccumulatorSec[i] = Math.max(0.0, slot.getInt32("acc").getValue());
-                else if (slot.get("acc").isInt64()) s.hotbarRechargeAccumulatorSec[i] = Math.max(0.0, slot.getInt64("acc").getValue());
-            }
-            if (slot.containsKey("last") && slot.get("last").isInt64()) {
-                s.hotbarLastUpdateMs[i] = Math.max(0L, slot.getInt64("last").getValue());
-            }
         }
     }
 
-    private static ItemStack writeRuntimeToItem(ItemStack stack, AbilityHotbarState.State s) {
+    private static BsonDocument getExistingRuntimeDocument(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        BsonDocument meta = stack.getMetadata();
+        if (meta == null) return null;
+        if (!meta.containsKey(RUNTIME_META_KEY)) return null;
+        if (!meta.get(RUNTIME_META_KEY).isDocument()) return null;
+        return meta.getDocument(RUNTIME_META_KEY);
+    }
+
+    private static BsonDocument buildRuntimeDocument(AbilityHotbarState.State s) {
         BsonArray slots = new BsonArray();
         for (int i = 0; i < 9; i++) {
             BsonDocument slot = new BsonDocument();
             slot.put("id", new BsonString(s.hotbarAbilityIds[i] == null ? "" : s.hotbarAbilityIds[i]));
             slot.put("rem", new BsonInt32(s.hotbarRemainingUses[i]));
             slot.put("cd", new BsonInt64(s.hotbarCooldownUntilMs[i]));
-            slot.put("acc", new BsonDouble(s.hotbarRechargeAccumulatorSec[i]));
-            slot.put("last", new BsonInt64(s.hotbarLastUpdateMs[i]));
             slots.add(slot);
         }
 
@@ -333,6 +353,6 @@ public class AbilitySystem {
         runtime.put("v", new BsonInt32(RUNTIME_META_VERSION));
         runtime.put("slots", slots);
 
-        return stack.withMetadata(RUNTIME_META_KEY, runtime);
+        return runtime;
     }
 }

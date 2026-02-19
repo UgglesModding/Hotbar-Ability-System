@@ -6,6 +6,8 @@ import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
+import com.hypixel.hytale.protocol.packets.inventory.DropCreativeItem;
+import com.hypixel.hytale.protocol.packets.inventory.DropItemStack;
 import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
@@ -61,11 +63,31 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
                 var s2 = state.get(playerRef.getUsername());
                 if (!s2.enabled) return;
+                if (!abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                    abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                    AbilityBarUtil.forceOff(state, player, playerRef);
+                    return;
+                }
 
                 HCA_AbilityApi.TickAllSlots(playerRef);
-                abilitySystem.persistBoundRuntime(playerRef, store, ref, false);
                 player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
             });
+        }
+
+        // Pre-flush runtime before vanilla drop handling.
+        if (s.enabled && (packet instanceof DropItemStack || packet instanceof DropCreativeItem)) {
+            CompletableFuture<Void> flushed = new CompletableFuture<>();
+            world.execute(() -> {
+                if (abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                    abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                }
+                flushed.complete(null);
+            });
+            try {
+                flushed.get(150, TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {
+            }
+            return false;
         }
 
         // =========================================================
@@ -75,6 +97,14 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
             for (SyncInteractionChain chain : chains.updates) {
                 if (!chain.initial) continue;
+
+                if (s.enabled && (chain.interactionType == InteractionType.Use || chain.interactionType == InteractionType.Ability1)) {
+                    world.execute(() -> {
+                        if (abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                            abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                        }
+                    });
+                }
 
                 // -------------------------
                 // Ability1 (Q): toggle bar
@@ -88,24 +118,24 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                             return;
                         }
 
-                        boolean hasBar = abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         var s2 = state.get(playerRef.getUsername());
 
+                        if (s2.enabled) {
+                            abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                            s2.enabled = false;
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                            handled.complete(true);
+                            return;
+                        }
+
+                        boolean hasBar = abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         if (!hasBar) {
-                            if (s2.enabled) {
-                                AbilityBarUtil.forceOff(state, player, playerRef);
-                            }
                             handled.complete(false);
                             return;
                         }
 
-                        s2.enabled = !s2.enabled;
-                        if (s2.enabled) {
-                            player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
-                        } else {
-                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        }
-
+                        s2.enabled = true;
+                        player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
                         handled.complete(true);
                     });
 
@@ -130,9 +160,6 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                     if (original < 0 || original > 8) original = 0;
 
                     int slot1to9 = target + 1;
-                    if (!abilitySystem.shouldConsumeHotbarInput(playerRef, slot1to9)) {
-                        continue;
-                    }
 
                     // Do everything on world thread
                     int finalOriginal = original;
@@ -198,7 +225,6 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
             if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
             if (incomingSlot < 0 || incomingSlot > 8) return false;
-            if (!abilitySystem.shouldConsumeHotbarInput(playerRef, incomingSlot + 1)) return false;
 
             long nowMsSuppress = System.currentTimeMillis();
             if (nowMsSuppress <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
