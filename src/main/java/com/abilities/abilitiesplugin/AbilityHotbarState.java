@@ -42,6 +42,10 @@ public class AbilityHotbarState {
         public int suppressNextSetActiveSlot = -1;
         public long suppressNextSetActiveSlotUntilMs = 0;
         public long nextHudRefreshAtMs = 0;
+        public long nextRuntimePersistAtMs = 0;
+        public boolean boundToTools = false;
+        public int boundSlot = -1;
+        public String boundItemId = null;
 
         public void fillAllEmpty() {
             abilityBarUiPath = null;
@@ -68,6 +72,10 @@ public class AbilityHotbarState {
             }
             selectedAbilitySlot = 1;
             nextHudRefreshAtMs = 0L;
+            nextRuntimePersistAtMs = 0L;
+            boundToTools = false;
+            boundSlot = -1;
+            boundItemId = null;
         }
     }
 

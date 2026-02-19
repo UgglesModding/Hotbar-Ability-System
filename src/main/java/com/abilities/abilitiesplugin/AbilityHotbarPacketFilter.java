@@ -63,6 +63,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                 if (!s2.enabled) return;
 
                 HCA_AbilityApi.TickAllSlots(playerRef);
+                abilitySystem.persistBoundRuntime(playerRef, store, ref, false);
                 player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
             });
         }
@@ -129,6 +130,9 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                     if (original < 0 || original > 8) original = 0;
 
                     int slot1to9 = target + 1;
+                    if (!abilitySystem.shouldConsumeHotbarInput(playerRef, slot1to9)) {
+                        continue;
+                    }
 
                     // Do everything on world thread
                     int finalOriginal = original;
@@ -194,6 +198,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
             if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
             if (incomingSlot < 0 || incomingSlot > 8) return false;
+            if (!abilitySystem.shouldConsumeHotbarInput(playerRef, incomingSlot + 1)) return false;
 
             long nowMsSuppress = System.currentTimeMillis();
             if (nowMsSuppress <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
