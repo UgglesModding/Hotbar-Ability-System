@@ -246,10 +246,6 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
 
     public static boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, Data.ID)) {
-            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
-            return true;
-        }
         Context.PlayerRef.sendMessage(Message.raw("Trolololololol")); //ideal for testing
 
         HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
@@ -357,10 +353,6 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
     public static boolean abilitySetMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
     {
-        if (!HCA_AbilityApi.SpendUse(Context.PlayerRef, data.ID)) {
-            //Context.playerRef.sendMessage(Message.raw("Out of uses: " + Data.ID));
-            return true;
-        }
         float fullPower = data.PowerMultiplier * Context.PowerMultiplier;
         HCA_AbilityApi.SetPlayerPowerMultiplier(Context.PlayerRef, fullPower);
 

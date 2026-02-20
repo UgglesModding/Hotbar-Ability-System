@@ -24,10 +24,7 @@ public class AbilityHotbarHud extends CustomUIHud {
         HCA_AbilityApi.TickAllSlots(this.getPlayerRef());
 
 
-        String uiPath = (s.abilityBarUiPath == null || s.abilityBarUiPath.isBlank())
-                ? "AbilityBar.ui"
-                : s.abilityBarUiPath;
-
+        String uiPath = normalizeUiPath(s.abilityBarUiPath);
         ui.append(uiPath);
 
         for (int i = 1; i <= 9; i++) {
@@ -84,6 +81,16 @@ public class AbilityHotbarHud extends CustomUIHud {
         ui.set("#CD" + slot1to9 + level + ".Visible", true);
     }
 
+    private static String normalizeUiPath(String uiPath) {
+        if (uiPath == null || uiPath.isBlank()) return "AbilityBar.ui";
 
+        String cleaned = uiPath.trim().replace('\\', '/');
+        if (cleaned.isEmpty()) return "AbilityBar.ui";
+
+        String lower = cleaned.toLowerCase();
+        if (!lower.endsWith(".ui")) cleaned = cleaned + ".ui";
+
+        return cleaned;
+    }
 
 }

@@ -182,7 +182,7 @@ public class AbilitySystem {
                         abilityValue
                 );
 
-                if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.ID)) {
+                if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.Slot0to8)) {
                     return;
                 } //check for uses. If none, then stop logic
 

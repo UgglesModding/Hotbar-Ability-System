@@ -1,0 +1,83 @@
+{
+  "ItemId": "TPG_TPGrimoire",
+  "AbilityBar": "HCA_TeleportAbilityBar.ui",
+  "AbilitySlots": [
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": 1,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": 3,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": 2,
+      "Consume": true,
+      "Plugin": true
+    },
+    {
+      "Key": "Ability_Double_Power",
+      "MaxUses": 1,
+      "PowerMultiplier": 2.0,
+      "ID": "combat_abilities:set_multiplication_power",
+      "Plugin": true,
+      "Consume": true
+    },
+    {
+      "Key": "Ability_Random_Teleport",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "combat_abilities:randomteleport",
+      "Plugin": true,
+      "Consume": true
+    },
+    {
+      "Key": "TPG_Toggle_Teleport_Local_Global",
+      "MaxUses": 1000,
+      "ID": "uggles_tpgrimoire:toggle_local_global",
+      "Plugin": true,
+      "Consume": true
+    },
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": -2,
+      "Plugin": true,
+      "Consume": true
+    },
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": -3,
+      "Plugin": true,
+      "Consume": true
+    },
+    {
+      "Key": "TPG_Teleport_Axis",
+      "MaxUses": 1000,
+      "PowerMultiplier": 6.0,
+      "ID": "uggles_tpgrimoire:teleport",
+      "AbilityValue": -1,
+      "Plugin": true,
+      "Consume": true
+    }
+  ]
+}

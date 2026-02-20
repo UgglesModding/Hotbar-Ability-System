@@ -1,0 +1,9 @@
+{
+  "Source": "Uggles_TeleportationGrimoire",
+  "Indexes": [
+    "Server/Item/Items/Weapons/index.json"
+  ],
+  "Overrides": {
+    "Weapon_Spellbook_Teleportation_Chrysalis": "TPG_TPGrimoire"
+  }
+  }

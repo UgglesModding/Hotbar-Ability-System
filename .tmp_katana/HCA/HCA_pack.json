@@ -1,0 +1,26 @@
+{
+  "Source": "Katanas",
+  "Indexes": [
+    "Server/Item/Items/Weapons/Katanas/index.json"
+  ],
+  "Overrides": {
+    "Katana_Iron": "HCA_Weapon",
+    "Katana_Wood": "Katana_Iron",
+    "Katana_Cobalt": "Katana_Iron",
+    "Katana_Copper": "Katana_Iron",
+    "Katana_Template": "Katana_Iron",
+    "Katana_Thorium": "Katana_Iron",
+    "Katana_Mithril": "Katana_Iron",
+    "Katana_Adamantite": "Katana_Iron"
+  },
+  "OverrideList": [
+    { "ItemId": "Katana_Iron",        "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Wood",        "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Cobalt",      "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Copper",      "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Template",    "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Thorium",     "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Mithril",     "AbilityBar": "katanabar.ui" },
+    { "ItemId": "Katana_Adamantite",  "AbilityBar": "katanabar.ui" }
+  ]
+}

@@ -180,15 +180,23 @@ public final class HCA_AbilityApi {
         int idx = FindSlotIndexByID(playerRef, AbilityID);
         if (idx < 0) return false;
 
+        return HasUsesLeft(playerRef, idx);
+    }
+
+    public static boolean HasUsesLeft(PlayerRef playerRef, int slotIndex0to8) {
+        if (state == null) return false;
+        if (playerRef == null) return false;
+        if (slotIndex0to8 < 0 || slotIndex0to8 > 8) return false;
+
         var s = state.get(playerRef.getUsername());
         long now = System.currentTimeMillis();
-        tickRecharge(s, idx, now);
+        tickRecharge(s, slotIndex0to8, now);
 
-        if (isLockedByCooldown(s, idx, now)) return false;
+        if (isLockedByCooldown(s, slotIndex0to8, now)) return false;
 
-        int max = s.hotbarMaxUses[idx];
+        int max = s.hotbarMaxUses[slotIndex0to8];
         if (max <= 0) return true;
-        return s.hotbarRemainingUses[idx] > 0;
+        return s.hotbarRemainingUses[slotIndex0to8] > 0;
     }
 
     public static boolean SpendUse(PlayerRef playerRef, String AbilityID) {
@@ -198,26 +206,34 @@ public final class HCA_AbilityApi {
         int idx = FindSlotIndexByID(playerRef, AbilityID);
         if (idx < 0) return false;
 
+        return SpendUse(playerRef, idx);
+    }
+
+    public static boolean SpendUse(PlayerRef playerRef, int slotIndex0to8) {
+        if (state == null) return false;
+        if (playerRef == null) return false;
+        if (slotIndex0to8 < 0 || slotIndex0to8 > 8) return false;
+
         var s = state.get(playerRef.getUsername());
         long now = System.currentTimeMillis();
-        tickRecharge(s, idx, now);
+        tickRecharge(s, slotIndex0to8, now);
 
-        if (isLockedByCooldown(s, idx, now)) return false;
+        if (isLockedByCooldown(s, slotIndex0to8, now)) return false;
 
-        int max = s.hotbarMaxUses[idx];
+        int max = s.hotbarMaxUses[slotIndex0to8];
 
         if (max <= 0) {
-            applyPostUseCooldown(s, idx, now);
+            applyPostUseCooldown(s, slotIndex0to8, now);
             return true;
         }
 
-        int remaining = s.hotbarRemainingUses[idx];
+        int remaining = s.hotbarRemainingUses[slotIndex0to8];
         if (remaining <= 0) return false;
 
-        s.hotbarRemainingUses[idx] = remaining - 1;
-        s.hotbarRechargeAccumulatorSec[idx] = 0.0;
-        s.hotbarLastUpdateMs[idx] = now;
-        applyPostUseCooldown(s, idx, now);
+        s.hotbarRemainingUses[slotIndex0to8] = remaining - 1;
+        s.hotbarRechargeAccumulatorSec[slotIndex0to8] = 0.0;
+        s.hotbarLastUpdateMs[slotIndex0to8] = now;
+        applyPostUseCooldown(s, slotIndex0to8, now);
         return true;
     }
 
