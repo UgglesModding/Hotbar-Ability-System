@@ -3,19 +3,40 @@ package com.abilities.abilitiesplugin;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.transaction.ItemStackSlotTransaction;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
+import org.bson.BsonString;
 
 import java.util.List;
 
 public class AbilitySystem {
+    private static final String RUNTIME_META_KEY = "hca_ability_runtime";
+    private static final int RUNTIME_META_VERSION = 1;
 
     private final WeaponRegistry weaponRegistry;
     private final AbilityHotbarState state;
     private final AbilityInteractionExecutor interactionExecutor;
+
+    private static final class HeldItemRef {
+        final boolean fromTools;
+        final short slot;
+        final ItemStack stack;
+
+        HeldItemRef(boolean fromTools, short slot, ItemStack stack) {
+            this.fromTools = fromTools;
+            this.slot = slot;
+            this.stack = stack;
+        }
+    }
 
     public AbilitySystem(
             WeaponRegistry weaponRegistry,
@@ -36,7 +57,13 @@ public class AbilitySystem {
             return false;
         }
 
-        String heldItemId = ItemIdUtil.normalizeItemId(getHeldItemId(player));
+        HeldItemRef held = getHeldItemRef(player);
+        if (held == null || held.stack == null || held.stack.isEmpty()) {
+            s.fillAllEmpty();
+            return false;
+        }
+
+        String heldItemId = ItemIdUtil.normalizeItemId(held.stack.getItemId());
         if (heldItemId == null || heldItemId.isBlank()) {
             s.fillAllEmpty();
             return false;
@@ -72,9 +99,11 @@ public class AbilitySystem {
                 s.hotbarPowerMultipliers[i] = power;
 
                 s.hotbarIcons[i] = (slot == null) ? null : slot.Icon;
+                s.hotbarCooldownTimes[i] = (slot == null) ? 0.3f : slot.CooldownTime;
+                s.hotbarRechargeTimes[i] = (slot == null) ? 1.0f : slot.RechargeTime;
+                s.hotbarStartWithCooldown[i] = (slot == null) || slot.StartWithCooldown;
 
-                if (s.hotbarMaxUses[i] > 0) s.hotbarRemainingUses[i] = s.hotbarMaxUses[i];
-                else s.hotbarRemainingUses[i] = 0;
+                HCA_AbilityApi.InitializeSlotRuntime(s, i);
 
             } else {
                 s.hotbarItemIds[i] = null;
@@ -89,10 +118,22 @@ public class AbilitySystem {
                 s.hotbarIcons[i] = null;
                 s.hotbarRemainingUses[i] = 0;
                 s.hotbarAbilityValues[i] = 0;
+                s.hotbarCooldownTimes[i] = 0.3f;
+                s.hotbarRechargeTimes[i] = 1.0f;
+                s.hotbarStartWithCooldown[i] = true;
+                s.hotbarCooldownUntilMs[i] = 0L;
+                s.hotbarRechargeAccumulatorSec[i] = 0.0;
+                s.hotbarLastUpdateMs[i] = 0L;
             }
         }
 
         s.selectedAbilitySlot = 1;
+        s.boundToTools = held.fromTools;
+        s.boundSlot = held.slot;
+        s.boundItemId = heldItemId;
+
+        loadRuntimeFromItem(s, held.stack);
+
         return true;
     }
 
@@ -111,6 +152,7 @@ public class AbilitySystem {
 
         if (plugin) {
             if (id == null || id.isBlank()) return;
+            HCA_AbilityApi.TickAllSlots(playerRef);
 
             String key = s.hotbarItemIds[slot0to8];
             int maxUses = s.hotbarMaxUses[slot0to8];
@@ -140,7 +182,7 @@ public class AbilitySystem {
                         abilityValue
                 );
 
-                if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.ID)) {
+                if (!HCA_AbilityApi.SpendUse(ctx.PlayerRef, data.Slot0to8)) {
                     return;
                 } //check for uses. If none, then stop logic
 
@@ -176,13 +218,141 @@ public class AbilitySystem {
         });
     }
 
-    private static String getHeldItemId(Player player) {
-        ItemContainer hotbar = player.getInventory().getHotbar();
-        byte active = player.getInventory().getActiveHotbarSlot();
+    public boolean shouldConsumeHotbarInput(PlayerRef playerRef, int slot1to9) {
+        if (slot1to9 < 1 || slot1to9 > 9) return false;
+        var s = state.get(playerRef.getUsername());
+        int idx = slot1to9 - 1;
 
-        ItemStack stack = hotbar.getItemStack((short) active);
-        if (stack == null) return null;
+        if (s.hotbarPluginFlags[idx]) {
+            String id = s.hotbarAbilityIds[idx];
+            return id != null && !id.isBlank();
+        }
 
-        return stack.getItemId();
+        String root = s.hotbarRootInteractions[idx];
+        return interactionExecutor.canExecute(root);
+    }
+
+    public boolean isHoldingBoundItem(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef) {
+        var s = state.get(playerRef.getUsername());
+
+        if (s.boundSlot < 0 || s.boundSlot > 8 || s.boundItemId == null || s.boundItemId.isBlank()) return false;
+
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        if (player == null) return false;
+
+        HeldItemRef held = getHeldItemRef(player);
+        if (held == null || held.stack == null || held.stack.isEmpty()) return false;
+        if (held.fromTools != s.boundToTools) return false;
+        if (held.slot != (short) s.boundSlot) return false;
+
+        String heldItemId = ItemIdUtil.normalizeItemId(held.stack.getItemId());
+        return heldItemId != null && heldItemId.equalsIgnoreCase(s.boundItemId);
+    }
+
+    public void persistBoundRuntime(PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> entityRef, boolean force) {
+        var s = state.get(playerRef.getUsername());
+        long now = System.currentTimeMillis();
+        if (!force && now < s.nextRuntimePersistAtMs) return;
+
+        Player player = store.getComponent(entityRef, Player.getComponentType());
+        if (player == null) return;
+
+        if (s.boundSlot < 0 || s.boundSlot > 8 || s.boundItemId == null || s.boundItemId.isBlank()) return;
+
+        Inventory inv = player.getInventory();
+        ItemContainer container = s.boundToTools ? inv.getTools() : inv.getHotbar();
+        short slot = (short) s.boundSlot;
+        ItemStack stack = container.getItemStack(slot);
+        if (stack == null || stack.isEmpty()) return;
+
+        String stackId = ItemIdUtil.normalizeItemId(stack.getItemId());
+        if (stackId == null || !stackId.equalsIgnoreCase(s.boundItemId)) return;
+
+        BsonDocument runtime = buildRuntimeDocument(s);
+        BsonDocument existing = getExistingRuntimeDocument(stack);
+        if (runtime.equals(existing)) {
+            s.nextRuntimePersistAtMs = now + 1000L;
+            return;
+        }
+
+        ItemStack updated = stack.withMetadata(RUNTIME_META_KEY, runtime);
+        ItemStackSlotTransaction tx = container.setItemStackForSlot(slot, updated);
+        if (tx != null && tx.succeeded()) {
+            s.nextRuntimePersistAtMs = now + 1000L;
+        }
+    }
+
+    private static HeldItemRef getHeldItemRef(Player player) {
+        Inventory inv = player.getInventory();
+
+        if (inv.usingToolsItem()) {
+            short toolSlot = (short) inv.getActiveToolsSlot();
+            ItemContainer tools = inv.getTools();
+            ItemStack toolStack = tools.getItemStack(toolSlot);
+            if (toolStack != null && !toolStack.isEmpty()) {
+                return new HeldItemRef(true, toolSlot, toolStack);
+            }
+        }
+
+        short hotbarSlot = (short) inv.getActiveHotbarSlot();
+        ItemContainer hotbar = inv.getHotbar();
+        ItemStack hotbarStack = hotbar.getItemStack(hotbarSlot);
+        if (hotbarStack == null || hotbarStack.isEmpty()) return null;
+
+        return new HeldItemRef(false, hotbarSlot, hotbarStack);
+    }
+
+    private static void loadRuntimeFromItem(AbilityHotbarState.State s, ItemStack stack) {
+        if (s == null || stack == null || stack.isEmpty()) return;
+
+        BsonDocument meta = stack.getMetadata();
+        if (meta == null || !meta.containsKey(RUNTIME_META_KEY)) return;
+        if (!meta.get(RUNTIME_META_KEY).isDocument()) return;
+
+        BsonDocument runtime = meta.getDocument(RUNTIME_META_KEY);
+        if (!runtime.containsKey("slots") || !runtime.get("slots").isArray()) return;
+
+        BsonArray slots = runtime.getArray("slots");
+        for (int i = 0; i < 9 && i < slots.size(); i++) {
+            if (!slots.get(i).isDocument()) continue;
+            BsonDocument slot = slots.get(i).asDocument();
+
+            if (slot.containsKey("rem") && slot.get("rem").isInt32()) {
+                int rem = slot.getInt32("rem").getValue();
+                int max = s.hotbarMaxUses[i];
+                if (max > 0) rem = Math.max(0, Math.min(max, rem));
+                else rem = Math.max(0, rem);
+                s.hotbarRemainingUses[i] = rem;
+            }
+            if (slot.containsKey("cd") && slot.get("cd").isInt64()) {
+                s.hotbarCooldownUntilMs[i] = Math.max(0L, slot.getInt64("cd").getValue());
+            }
+        }
+    }
+
+    private static BsonDocument getExistingRuntimeDocument(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        BsonDocument meta = stack.getMetadata();
+        if (meta == null) return null;
+        if (!meta.containsKey(RUNTIME_META_KEY)) return null;
+        if (!meta.get(RUNTIME_META_KEY).isDocument()) return null;
+        return meta.getDocument(RUNTIME_META_KEY);
+    }
+
+    private static BsonDocument buildRuntimeDocument(AbilityHotbarState.State s) {
+        BsonArray slots = new BsonArray();
+        for (int i = 0; i < 9; i++) {
+            BsonDocument slot = new BsonDocument();
+            slot.put("id", new BsonString(s.hotbarAbilityIds[i] == null ? "" : s.hotbarAbilityIds[i]));
+            slot.put("rem", new BsonInt32(s.hotbarRemainingUses[i]));
+            slot.put("cd", new BsonInt64(s.hotbarCooldownUntilMs[i]));
+            slots.add(slot);
+        }
+
+        BsonDocument runtime = new BsonDocument();
+        runtime.put("v", new BsonInt32(RUNTIME_META_VERSION));
+        runtime.put("slots", slots);
+
+        return runtime;
     }
 }

@@ -30,16 +30,23 @@ public class AbilityDebugCommand extends AbstractPlayerCommand {
     ) {
         world.execute(() -> {
             var s = state.get(playerRef.getUsername());
+            HCA_AbilityApi.TickAllSlots(playerRef);
 
             StringBuilder sb = new StringBuilder();
             sb.append("Enabled=").append(s.enabled).append(" | ");
 
             sb.append("Selected=").append(s.selectedAbilitySlot).append("\n");
+            long now = System.currentTimeMillis();
 
             for (int i = 0; i < 9; i++) {
                 sb.append(i + 1)
                         .append(": ")
                         .append(s.hotbarItemIds[i])
+                        .append(" | uses=").append(s.hotbarRemainingUses[i]).append("/").append(s.hotbarMaxUses[i])
+                        .append(" | cooldown=").append(s.hotbarCooldownTimes[i])
+                        .append(" | recharge=").append(s.hotbarRechargeTimes[i])
+                        .append(" | startWithCooldown=").append(s.hotbarStartWithCooldown[i])
+                        .append(" | cooldownMs=").append(Math.max(0L, s.hotbarCooldownUntilMs[i] - now))
                         .append("\n");
             }
 

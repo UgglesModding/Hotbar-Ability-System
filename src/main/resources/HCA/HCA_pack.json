@@ -1,7 +1,7 @@
 {
   "Source": "HotbarAbilities",
   "Indexes": [
-    "Server/Item/Items/Weapons/HCA_Weapons/Index.json"
+    "Server/Item/Items/Weapons/HCA_Weapons/index.json"
   ],
   "Overrides": {
 

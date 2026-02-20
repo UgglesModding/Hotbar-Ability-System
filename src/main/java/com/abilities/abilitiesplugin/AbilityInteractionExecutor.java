@@ -29,6 +29,11 @@ public class AbilityInteractionExecutor {
         });
     }
 
+    public boolean canExecute(String interactionName) {
+        if (interactionName == null || interactionName.isBlank()) return false;
+        return handlers.containsKey(interactionName);
+    }
+
     public boolean execute(String interactionName, PlayerRef playerRef, Store<EntityStore> store, Ref<EntityStore> ref, World world) {
         if (interactionName == null || interactionName.isBlank()) return false;
 

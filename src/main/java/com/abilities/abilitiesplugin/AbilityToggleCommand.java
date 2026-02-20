@@ -53,6 +53,7 @@ public class AbilityToggleCommand extends AbstractPlayerCommand {
 
                 ctx.sendMessage(Message.raw("Ability Bar: ON"));
             } else {
+                abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
                 AbilityBarUtil.forceOff(state, player, playerRef);
                 ctx.sendMessage(Message.raw("Ability Bar: OFF"));
             }

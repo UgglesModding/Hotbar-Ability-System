@@ -6,6 +6,8 @@ import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
+import com.hypixel.hytale.protocol.packets.inventory.DropCreativeItem;
+import com.hypixel.hytale.protocol.packets.inventory.DropItemStack;
 import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
@@ -50,6 +52,43 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
+        long now = System.currentTimeMillis();
+
+        // Keep HUD live-updating while enabled so cooldown overlays animate and recharges show up.
+        if (s.enabled && now >= s.nextHudRefreshAtMs) {
+            s.nextHudRefreshAtMs = now + 100L;
+            world.execute(() -> {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                if (player == null) return;
+
+                var s2 = state.get(playerRef.getUsername());
+                if (!s2.enabled) return;
+                if (!abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                    abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                    AbilityBarUtil.forceOff(state, player, playerRef);
+                    return;
+                }
+
+                HCA_AbilityApi.TickAllSlots(playerRef);
+                player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
+            });
+        }
+
+        // Pre-flush runtime before vanilla drop handling.
+        if (s.enabled && (packet instanceof DropItemStack || packet instanceof DropCreativeItem)) {
+            CompletableFuture<Void> flushed = new CompletableFuture<>();
+            world.execute(() -> {
+                if (abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                    abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                }
+                flushed.complete(null);
+            });
+            try {
+                flushed.get(150, TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {
+            }
+            return false;
+        }
 
         // =========================================================
         // 1) SyncInteractionChains (Ability1 toggle + SwapFrom hotbar)
@@ -58,6 +97,14 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
 
             for (SyncInteractionChain chain : chains.updates) {
                 if (!chain.initial) continue;
+
+                if (s.enabled && (chain.interactionType == InteractionType.Use || chain.interactionType == InteractionType.Ability1)) {
+                    world.execute(() -> {
+                        if (abilitySystem.isHoldingBoundItem(playerRef, store, ref)) {
+                            abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                        }
+                    });
+                }
 
                 // -------------------------
                 // Ability1 (Q): toggle bar
@@ -71,24 +118,24 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                             return;
                         }
 
-                        boolean hasBar = abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         var s2 = state.get(playerRef.getUsername());
 
+                        if (s2.enabled) {
+                            abilitySystem.persistBoundRuntime(playerRef, store, ref, true);
+                            s2.enabled = false;
+                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
+                            handled.complete(true);
+                            return;
+                        }
+
+                        boolean hasBar = abilitySystem.refreshFromHeldWeapon(playerRef, store, ref);
                         if (!hasBar) {
-                            if (s2.enabled) {
-                                AbilityBarUtil.forceOff(state, player, playerRef);
-                            }
                             handled.complete(false);
                             return;
                         }
 
-                        s2.enabled = !s2.enabled;
-                        if (s2.enabled) {
-                            player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
-                        } else {
-                            player.getHudManager().setCustomHud(playerRef, new EmptyHud(playerRef));
-                        }
-
+                        s2.enabled = true;
+                        player.getHudManager().setCustomHud(playerRef, new AbilityHotbarHud(playerRef, state));
                         handled.complete(true);
                     });
 
@@ -123,8 +170,8 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                         var s2 = state.get(playerRef.getUsername());
 
                         // If this SwapFrom is our own correction echo, ignore it
-                        long now = System.currentTimeMillis();
-                        if (now <= s2.suppressNextSetActiveSlotUntilMs && target == s2.suppressNextSetActiveSlot) {
+                        long nowMsSwap = System.currentTimeMillis();
+                        if (nowMsSwap <= s2.suppressNextSetActiveSlotUntilMs && target == s2.suppressNextSetActiveSlot) {
                             s2.suppressNextSetActiveSlot = -1;
                             s2.suppressNextSetActiveSlotUntilMs = 0;
                             return;
@@ -179,8 +226,8 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
             if (incomingSection != Inventory.HOTBAR_SECTION_ID) return false;
             if (incomingSlot < 0 || incomingSlot > 8) return false;
 
-            long now = System.currentTimeMillis();
-            if (now <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
+            long nowMsSuppress = System.currentTimeMillis();
+            if (nowMsSuppress <= s.suppressNextSetActiveSlotUntilMs && incomingSlot == s.suppressNextSetActiveSlot) {
                 s.suppressNextSetActiveSlot = -1;
                 s.suppressNextSetActiveSlotUntilMs = 0;
                 return true;

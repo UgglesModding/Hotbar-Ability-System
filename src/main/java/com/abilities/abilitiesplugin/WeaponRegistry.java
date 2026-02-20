@@ -155,6 +155,12 @@ public class WeaponRegistry {
                     sp.MaxUses = getNullableInt(spObj, "MaxUses");
                     sp.PowerMultiplier = getNullableFloat(spObj, "PowerMultiplier");
                     sp.AbilityValue = getNullableInt(spObj, "AbilityValue");
+                    Float legacyTime = getNullableFloat(spObj, "Time");
+                    sp.CooldownTime = getNullableFloat(spObj, "CooldownTime");
+                    if (sp.CooldownTime == null) sp.CooldownTime = legacyTime;
+                    sp.RechargeTime = getNullableFloat(spObj, "RechargeTime");
+                    if (sp.RechargeTime == null) sp.RechargeTime = legacyTime;
+                    sp.StartWithCooldown = getNullableBoolean(spObj, "StartWithCooldown");
 
                     p.slotOverrides.put(idx1to9, sp);
                 }
@@ -220,6 +226,12 @@ public class WeaponRegistry {
                     sp.MaxUses = getNullableInt(spObj, "MaxUses");
                     sp.PowerMultiplier = getNullableFloat(spObj, "PowerMultiplier");
                     sp.AbilityValue = getNullableInt(spObj, "AbilityValue");
+                    Float legacyTime = getNullableFloat(spObj, "Time");
+                    sp.CooldownTime = getNullableFloat(spObj, "CooldownTime");
+                    if (sp.CooldownTime == null) sp.CooldownTime = legacyTime;
+                    sp.RechargeTime = getNullableFloat(spObj, "RechargeTime");
+                    if (sp.RechargeTime == null) sp.RechargeTime = legacyTime;
+                    sp.StartWithCooldown = getNullableBoolean(spObj, "StartWithCooldown");
 
                     p.slotOverrides.put(idx1to9, sp);
                 }
@@ -360,6 +372,11 @@ public class WeaponRegistry {
                 slot.Icon = getString(sObj, "Icon");
                 slot.AbilityValue = getInt(sObj, "AbilityValue", 0);
                 slot.Consume = getBooleanLenient(sObj, "Consume");
+                float legacyTime = getFloat(sObj, "Time", -1.0f);
+                slot.CooldownTime = getFloat(sObj, "CooldownTime", (legacyTime >= 0.0f) ? legacyTime : 0.3f);
+                slot.RechargeTime = getFloat(sObj, "RechargeTime", (legacyTime >= 0.0f) ? legacyTime : 1.0f);
+                JsonElement swcEl = sObj.get("StartWithCooldown");
+                slot.StartWithCooldown = (swcEl == null || swcEl.isJsonNull()) || getBooleanLenient(sObj, "StartWithCooldown");
 
                 slots.add(slot);
             }
@@ -402,6 +419,9 @@ public class WeaponRegistry {
             if (p.MaxUses != null) slot.MaxUses = p.MaxUses;
             if (p.PowerMultiplier != null) slot.PowerMultiplier = p.PowerMultiplier;
             if (p.AbilityValue != null) slot.AbilityValue = p.AbilityValue;
+            if (p.CooldownTime != null) slot.CooldownTime = p.CooldownTime;
+            if (p.RechargeTime != null) slot.RechargeTime = p.RechargeTime;
+            if (p.StartWithCooldown != null) slot.StartWithCooldown = p.StartWithCooldown;
 
             def.AbilitySlots.set(idx0, slot);
         }
@@ -433,6 +453,9 @@ public class WeaponRegistry {
         c.Icon = s.Icon;
         c.AbilityValue = s.AbilityValue;
         c.Consume = s.Consume;
+        c.CooldownTime = s.CooldownTime;
+        c.RechargeTime = s.RechargeTime;
+        c.StartWithCooldown = s.StartWithCooldown;
 
         return c;
     }
@@ -553,5 +576,8 @@ public class WeaponRegistry {
         Integer MaxUses;
         Float PowerMultiplier;
         Integer AbilityValue;
+        Float CooldownTime;
+        Float RechargeTime;
+        Boolean StartWithCooldown;
     }
 }

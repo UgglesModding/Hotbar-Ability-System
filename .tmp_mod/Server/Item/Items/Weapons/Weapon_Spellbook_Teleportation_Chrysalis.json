@@ -1,0 +1,60 @@
+{
+  "Categories": [
+    "Items.Weapons"
+  ],
+  "Quality": "Rare",
+  "ItemLevel": 40,
+  "Model": "Items/Weapons/Spellbook/Grimoire.blockymodel",
+  "Texture": "Items/Weapons/Spellbook/Grimoire_Teleport_Texture.png",
+  "PlayerAnimationsId": "Spellbook",
+  "Icon": "Icons/ItemsGenerated/Weapons_Grimoire_TeleportGrimoire.png",
+  "DroppedItemAnimation": "Items/Animations/Dropped/Dropped_Diagonal_Left.blockyanim",
+  "MaxStack": 5,
+  "Tags": {
+    "Type": [
+      "Weapon"
+    ],
+    "Family": [
+      "Sword"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Weapons_Books",
+  "Interactions": {
+    "Primary": "Longsword_Attack",
+    "Secondary": "Kweebec_Sapling_Razorleaf_Spear_Swing_Right"
+  },
+  "TranslationProperties": {
+    "Name": "Grimoire: Teleportation Chrysalis",
+    "Description": ""
+  },
+  "Parent": "Weapon_Sword_Wood",
+  "Recipe": {
+    "BenchRequirement": [
+      {
+        "Id": "Arcanebench",
+        "Type": "Crafting",
+        "Categories": [
+          "Arcane_Misc"
+        ]
+      }
+    ],
+    "Input": [
+      {
+        "ItemId": "Ingredient_Leather_Medium",
+        "Quantity": 1
+      },
+      {
+        "ItemId": "Ingredient_Fabric_Scrap_Shadoweave",
+        "Quantity": 3
+      },
+      {
+        "Quantity": 5,
+        "ItemId": "Ingredient_Crystal_Purple"
+      },
+      {
+        "Quantity": 1,
+        "ItemId": "Ingredient_Bar_Gold"
+      }
+    ]
+  }
+}
