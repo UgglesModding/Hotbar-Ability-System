@@ -76,7 +76,7 @@
   "Icon": "Icons/ItemsGenerated/Weapon_Sword_Mithril.png",
   "Model": "Items/Weapons/Longsword/Adamantite.blockymodel",
   "TranslationProperties": {
-    "Name": "Test CAO Weapon"
+    "Name": "Test HCA Weapon"
   },
   "Categories": [
     "Items.Weapons"

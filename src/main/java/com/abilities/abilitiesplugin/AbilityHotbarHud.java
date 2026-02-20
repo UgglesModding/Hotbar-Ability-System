@@ -26,10 +26,11 @@ public class AbilityHotbarHud extends CustomUIHud {
 
         String uiPath = normalizeUiPath(s.abilityBarUiPath);
         ui.append(uiPath);
+        CooldownWidgetMode cooldownMode = resolveCooldownWidgetMode(uiPath);
 
         for (int i = 1; i <= 9; i++) {
             applyUseBar(ui, i, s.hotbarRemainingUses[i - 1], s.hotbarMaxUses[i - 1]);
-            applyCooldownOverlay(ui, i, s);
+            applyCooldownOverlay(ui, i, s, cooldownMode);
         }
     }
 
@@ -59,12 +60,18 @@ public class AbilityHotbarHud extends CustomUIHud {
         ui.set("#Bar" + barIndex1to9 + level + ".Visible", true);
     }
 
-    private void applyCooldownOverlay(UICommandBuilder ui, int slot1to9, AbilityHotbarState.State s) {
+    private void applyCooldownOverlay(UICommandBuilder ui, int slot1to9, AbilityHotbarState.State s, CooldownWidgetMode mode) {
         int idx = slot1to9 - 1;
         long now = System.currentTimeMillis();
         float ratio = HCA_AbilityApi.getCooldownOverlayRatio(s, idx, now);
 
-        for (int step = 0; step <= BAR_STEPS; step++) {
+        if (mode == CooldownWidgetMode.PARENT_ONLY) {
+            ui.set("#CD" + slot1to9 + ".Visible", ratio > 0.0f);
+            return;
+        }
+
+        int minStep = (mode == CooldownWidgetMode.SEGMENTED_WITH_ZERO) ? 0 : 1;
+        for (int step = minStep; step <= BAR_STEPS; step++) {
             ui.set("#CD" + slot1to9 + step + ".Visible", false);
         }
 
@@ -91,6 +98,26 @@ public class AbilityHotbarHud extends CustomUIHud {
         if (!lower.endsWith(".ui")) cleaned = cleaned + ".ui";
 
         return cleaned;
+    }
+
+    private static CooldownWidgetMode resolveCooldownWidgetMode(String uiPath) {
+        String fileName = fileNameOnly(uiPath);
+        if (fileName.equalsIgnoreCase("AbilityBar.ui")) return CooldownWidgetMode.SEGMENTED_WITH_ZERO;
+        if (fileName.equalsIgnoreCase("katanabar.ui")) return CooldownWidgetMode.SEGMENTED_NO_ZERO;
+        return CooldownWidgetMode.PARENT_ONLY;
+    }
+
+    private static String fileNameOnly(String uiPath) {
+        if (uiPath == null || uiPath.isBlank()) return "";
+        String normalized = uiPath.replace('\\', '/');
+        int idx = normalized.lastIndexOf('/');
+        return (idx >= 0) ? normalized.substring(idx + 1) : normalized;
+    }
+
+    private enum CooldownWidgetMode {
+        PARENT_ONLY,
+        SEGMENTED_WITH_ZERO,
+        SEGMENTED_NO_ZERO
     }
 
 }
