@@ -241,6 +241,7 @@ public final class HCA_AbilityApi {
         if (state == null || playerRef == null) return;
         var s = state.get(playerRef.getUsername());
         long now = System.currentTimeMillis();
+        tickPlayerPowerMultiplier(s, now);
         for (int i = 0; i < 9; i++) {
             tickRecharge(s, i, now);
         }
@@ -360,8 +361,56 @@ public final class HCA_AbilityApi {
         if (newValue <= 0.0f) newValue = 1.0f;
 
         var s = state.get(playerRef.getUsername());
+        tickPlayerPowerMultiplier(s, System.currentTimeMillis());
         s.PlayerPowerMultiplier = newValue;
+        s.PlayerPowerMultiplierTemporaryActive = false;
+        s.PlayerPowerMultiplierBeforeTemporary = 1.0f;
+        s.PlayerPowerMultiplierTemporaryUntilMs = 0L;
         return true;
+    }
+
+    public static boolean SetTemporaryPlayerPowerMultiplier(PlayerRef playerRef, float newValue, int durationSeconds) {
+        if (state == null) return false;
+        if (playerRef == null) return false;
+        if (durationSeconds <= 0) return false;
+        if (newValue <= 0.0f) newValue = 1.0f;
+
+        var s = state.get(playerRef.getUsername());
+        long now = System.currentTimeMillis();
+        tickPlayerPowerMultiplier(s, now);
+
+        float previous = s.PlayerPowerMultiplier;
+        if (previous <= 0.0f) previous = 1.0f;
+
+        s.PlayerPowerMultiplierBeforeTemporary = previous;
+        s.PlayerPowerMultiplier = newValue;
+        s.PlayerPowerMultiplierTemporaryActive = true;
+        s.PlayerPowerMultiplierTemporaryUntilMs = now + (durationSeconds * 1000L);
+        return true;
+    }
+
+    public static float GetPlayerPowerMultiplier(PlayerRef playerRef) {
+        if (state == null || playerRef == null) return 1.0f;
+
+        var s = state.get(playerRef.getUsername());
+        tickPlayerPowerMultiplier(s, System.currentTimeMillis());
+        float pm = s.PlayerPowerMultiplier;
+        if (pm <= 0.0f) pm = 1.0f;
+        return pm;
+    }
+
+    private static void tickPlayerPowerMultiplier(AbilityHotbarState.State s, long nowMs) {
+        if (s == null) return;
+        if (!s.PlayerPowerMultiplierTemporaryActive) return;
+        if (nowMs < s.PlayerPowerMultiplierTemporaryUntilMs) return;
+
+        float previous = s.PlayerPowerMultiplierBeforeTemporary;
+        if (previous <= 0.0f) previous = 1.0f;
+
+        s.PlayerPowerMultiplier = previous;
+        s.PlayerPowerMultiplierTemporaryActive = false;
+        s.PlayerPowerMultiplierBeforeTemporary = 1.0f;
+        s.PlayerPowerMultiplierTemporaryUntilMs = 0L;
     }
 
     public static boolean HasAbilityString(PlayerRef playerRef, String AbilityID, String value) {

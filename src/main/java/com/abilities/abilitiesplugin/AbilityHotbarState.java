@@ -36,6 +36,9 @@ public class AbilityHotbarState {
         public final List<String>[] hotbarStringFlags = new ArrayList[9];
 
         public float PlayerPowerMultiplier = 1.0f;
+        public boolean PlayerPowerMultiplierTemporaryActive = false;
+        public float PlayerPowerMultiplierBeforeTemporary = 1.0f;
+        public long PlayerPowerMultiplierTemporaryUntilMs = 0L;
 
         public int selectedAbilitySlot = 1;
 
@@ -71,6 +74,10 @@ public class AbilityHotbarState {
 
             }
             selectedAbilitySlot = 1;
+            PlayerPowerMultiplier = 1.0f;
+            PlayerPowerMultiplierTemporaryActive = false;
+            PlayerPowerMultiplierBeforeTemporary = 1.0f;
+            PlayerPowerMultiplierTemporaryUntilMs = 0L;
             nextHudRefreshAtMs = 0L;
             nextRuntimePersistAtMs = 0L;
             boundToTools = false;
