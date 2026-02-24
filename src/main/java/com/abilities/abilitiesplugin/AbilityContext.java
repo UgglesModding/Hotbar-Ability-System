@@ -49,9 +49,8 @@ public final class AbilityContext {
                 store.getComponent(entityRef,
                         com.hypixel.hytale.server.core.entity.entities.Player.getComponentType());
 
-        // read per-player multiplier from hotbar state
-        var s = hotbarState.get(playerRef.getUsername());
-        float pm = (s == null) ? 1.0f : s.PlayerPowerMultiplier;
+        // Read runtime per-player multiplier (also applies timed-expiry checks).
+        float pm = HCA_AbilityApi.GetPlayerPowerMultiplier(playerRef);
         if (pm <= 0.0f) pm = 1.0f;
 
         return new AbilityContext(playerRef, player, store, entityRef, world, pm, abilityValue);

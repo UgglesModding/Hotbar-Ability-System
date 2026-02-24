@@ -248,7 +248,12 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
 
     public static boolean abilityTrololol(PackagedAbilityData Data, AbilityContext Context) {
-        Context.PlayerRef.sendMessage(Message.raw("Trolololololol")); //ideal for testing
+        float fullPower = Data.PowerMultiplier * Context.PowerMultiplier;
+        int repeats = Math.max(1, Math.round(fullPower));
+
+        for (int i = 0; i < repeats; i++) {
+            Context.PlayerRef.sendMessage(Message.raw("Trolololololol")); // ideal for testing
+        }
 
         HCA_AbilityApi.ConsumeChargeInHand(Context, 1);
         return true;
@@ -363,7 +368,13 @@ public class HCA_DoAbility implements IAbilityPlugin {
 
     public static boolean abilitySetTempMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
     {
+        int durationSeconds = Context.AbilityValue;
+        if (durationSeconds <= 0) return true;
 
+        float targetPower = data.PowerMultiplier;
+        if (targetPower <= 0.0f) targetPower = 1.0f;
+
+        HCA_AbilityApi.SetTemporaryPlayerPowerMultiplier(Context.PlayerRef, targetPower, durationSeconds);
         return true;
     }
 
