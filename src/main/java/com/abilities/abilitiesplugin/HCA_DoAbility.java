@@ -56,6 +56,8 @@ public class HCA_DoAbility implements IAbilityPlugin {
             case "combat_abilities:set_multiplication_power":
                 return abilitySetMultiplicationPower(Data,Context);
 
+            case "combat_abilities:temporary_multiplication_power":
+                return abilitySetTempMultiplicationPower(Data,Context);
             default:
                 if (externalChain != null) {
                     return externalChain.tryExecute(Data, Context);
@@ -359,6 +361,11 @@ public class HCA_DoAbility implements IAbilityPlugin {
         return true;
     }
 
+    public static boolean abilitySetTempMultiplicationPower(PackagedAbilityData data, AbilityContext Context)
+    {
+
+        return true;
+    }
 
     private static Vector3d normalizeSafe(Vector3d v) {
         double len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);

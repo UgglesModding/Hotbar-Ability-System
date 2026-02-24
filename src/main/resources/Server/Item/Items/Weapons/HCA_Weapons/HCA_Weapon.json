@@ -38,10 +38,14 @@
       "ID": "combat_abilities:empty"
     },
     {
-      "Key": "Ability_Empty",
-      "MaxUses": 3,
-      "PowerMultiplier": 1.0,
-      "ID": "combat_abilities:empty"
+      "Key": "Ability_TempMultiplication",
+      "MaxUses": 2,
+      "PowerMultiplier": 2.0,
+      "ID": "combat_abilities:temporary_multiplication_power",
+      "Plugin": true,
+      "CooldownTime": 10.0,
+      "RechargeTime": 15.0,
+      "AbilityValue": 3
     },
     {
       "Key": "Ability_CoinFlip",
