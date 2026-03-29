@@ -15,7 +15,7 @@ public final class AbilityContext {
     public final Ref<EntityStore> EntityRef;
     public final World World;
 
-    // NEW: runtime player multiplier + runtime value
+
     public final float PowerMultiplier;
     public final int AbilityValue;
 

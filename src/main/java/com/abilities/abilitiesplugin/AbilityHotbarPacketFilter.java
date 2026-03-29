@@ -178,7 +178,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                         }
 
                         // Force server slot back to original (prevents actual item swap)
-                        player.getInventory().setActiveHotbarSlot((byte) finalOriginal);
+                        setActiveHotbarSlot(player, ref, store, finalOriginal);
 
                         // Suppress the echo from the correction packet
                         s2.suppressNextSetActiveSlot = finalOriginal;
@@ -248,7 +248,7 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
                 s2.suppressNextSetActiveSlot = original;
                 s2.suppressNextSetActiveSlotUntilMs = System.currentTimeMillis() + 250;
 
-                player.getInventory().setActiveHotbarSlot((byte) original);
+                setActiveHotbarSlot(player, ref, store, original);
                 playerRef.getPacketHandler().write(new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, original));
 
                 int slot1to9 = pressed0to8 + 1;
@@ -294,5 +294,14 @@ public class AbilityHotbarPacketFilter implements PlayerPacketFilter {
         }
 
         return Integer.MIN_VALUE;
+    }
+
+    private static void setActiveHotbarSlot(
+            Player player,
+            Ref<EntityStore> ref,
+            Store<EntityStore> store,
+            int slot
+    ) {
+        player.getInventory().setActiveHotbarSlot(ref, (byte) slot, store);
     }
 }

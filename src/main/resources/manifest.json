@@ -1,7 +1,7 @@
 {
   "Group": "Uggles",
   "Name": "HotbarCombatAbilities",
-  "Version": "1.3.1",
+  "Version": "1.3.2",
   "Description": "Adds a customizable hotbar based ability system to Hytale",
   "Authors": [
     {
@@ -11,7 +11,7 @@
     }
   ],
   "Website": "https://legacy.curseforge.com/hytale/mods/uggles-hotbar-combat-abilities",
-  "ServerVersion": "2026.02.19-1a311a592",
+  "ServerVersion": "2026.03.26-89796e57b",
   "Dependencies": {},
   "OptionalDependencies": {},
   "DisabledByDefault": false,
